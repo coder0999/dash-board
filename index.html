@@ -1,1 +1,1116 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم</title>
+    <!-- تضمين Tailwind CSS و Font Awesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+        body {
+            font-family: 'Cairo', sans-serif;
+            direction: rtl;
+            background-color: #f3f4f6;
+        }
+        /* تصميم للمربع الحواري المخصص */
+        .custom-alert-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .custom-alert-box {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        .custom-alert-box button {
+            margin-top: 1rem;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            width: 40px;
+            height: 40px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .nav-icon {
+            font-size: 1.5rem;
+        }
+        .question-number-box {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.125rem; /* text-lg */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 2px solid white;
+        }
+        /* إزالة أسهم التحديد من حقول الأرقام */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
 
+    <!-- شاشة تسجيل الدخول -->
+    <div id="login-page" class="flex-grow flex items-center justify-center">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-6">مرحباً بك</h1>
+            <p class="text-gray-600 mb-8">الرجاء تسجيل الدخول للمتابعة</p>
+            <button id="google-signin-btn" class="bg-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform active:scale-105 flex items-center justify-center mx-auto">
+                <i class="fab fa-google ml-2"></i>
+                <span>تسجيل الدخول باستخدام جوجل</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- المحتوى الرئيسي للتطبيق (سيتم إظهاره بعد تسجيل الدخول) -->
+    <div id="main-content" class="hidden flex-grow flex flex-col">
+        <!-- صفحة الامتحانات -->
+        <div id="exams-page" class="container mx-auto p-4 md:p-8 max-w-3xl w-full flex-grow mb-20 overflow-y-auto">
+            <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">إنشاء امتحان</h1>
+
+            <!-- أزرار اختيار طريقة الإدخال -->
+            <div class="flex justify-center mb-8 space-x-4 space-x-reverse">
+                <button id="show-manual-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                    رفع يدوي
+                </button>
+                <button id="show-image-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">
+                    رفع بالصور
+                </button>
+            </div>
+
+            <!-- حقول بيانات الامتحان الجديدة -->
+            <div id="exam-metadata-fields" class="mb-8 space-y-4">
+                <div class="border-b-2 border-gray-300 pb-2">
+                    <label for="exam-name" class="block text-sm font-medium text-gray-700">اسم الامتحان</label>
+                    <input type="text" id="exam-name" class="mt-1 block w-full bg-transparent border-none p-0 focus:ring-0 focus:outline-none text-lg">
+                </div>
+                <div class="flex space-x-4 space-x-reverse">
+                    <div class="border-b-2 border-gray-300 pb-2 w-1/2">
+                        <label for="exam-duration" class="block text-sm font-medium text-gray-700">المدة الزمنية (دقيقة)</label>
+                        <input type="number" id="exam-duration" class="mt-1 block w-full bg-transparent border-none p-0 focus:ring-0 focus:outline-none text-lg">
+                    </div>
+                    <div class="border-b-2 border-gray-300 pb-2 w-1/2">
+                        <label for="default-points" class="block text-sm font-medium text-gray-700">النقاط الافتراضية</label>
+                        <input type="number" id="default-points" class="mt-1 block w-full bg-transparent border-none p-0 focus:ring-0 focus:outline-none text-lg" value="1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- محتوى الإدخال اليدوي -->
+            <div id="manual-content" class="space-y-6">
+                <div id="question-list">
+                    <!-- سيتم إضافة الأسئلة هنا بواسطة JavaScript -->
+                </div>
+
+                <div class="flex justify-center space-x-4 space-x-reverse mt-8">
+                    <button id="add-question-btn" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform active:scale-105">
+                        أضف سؤال جديد يدوياً
+                    </button>
+                </div>
+            </div>
+
+            <!-- محتوى الإدخال بالصور -->
+            <div id="image-content" class="hidden">
+                <div class="flex items-center justify-center w-full">
+                    <label id="image-upload-label" for="image-upload" class="relative flex flex-col items-center justify-center w-full h-96 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 transition-colors">
+                        <div id="image-preview-container" class="absolute inset-0 p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto">
+                            <!-- سيتم إضافة معاينات الصور هنا -->
+                        </div>
+                        <div id="upload-placeholder" class="text-center">
+                            <svg class="w-16 h-16 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <span class="text-gray-500 mt-2">انقر لرفع الصور</span>
+                        </div>
+                        <input id="image-upload" type="file" class="hidden" accept="image/png, image/jpeg" multiple />
+                    </label>
+                </div>
+                <div class="mt-4 flex justify-center">
+                    <button id="process-image-btn" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform active:scale-105" disabled>
+                        تحليل الصور واستخراج الأسئلة
+                    </button>
+                </div>
+            </div>
+            
+            <hr id="main-hr" class="my-8 border-gray-300">
+
+            <div id="main-buttons-container" class="flex justify-center space-x-4 space-x-reverse">
+                <button id="save-exam-btn" class="bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform active:scale-105">
+                    حفظ الامتحان
+                </button>
+                <button id="new-exam-btn" class="bg-gray-500 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform active:scale-105 hidden">
+                    امتحان جديد
+                </button>
+            </div>
+
+            <!-- *** قسم الامتحانات المنشورة الجديد *** -->
+            <div id="published-exams-section" class="mt-12">
+                <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">امتحاناتك المنشورة</h2>
+                <div id="published-exams-list" class="space-y-4">
+                    <!-- سيتم عرض قائمة الامتحانات هنا -->
+                </div>
+            </div>
+        </div>
+
+        <!-- صفحة التقييمات -->
+        <div id="evaluations-page" class="hidden container mx-auto p-4 md:p-8 max-w-3xl w-full flex-grow mb-20 overflow-y-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">التقييمات</h1>
+                <button id="add-subject-btn" class="bg-blue-600 text-white text-2xl w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-transform transform active:scale-105">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <!-- حاوية لعرض بطاقات المواد -->
+            <div id="subjects-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- سيتم عرض بطاقات المواد هنا بواسطة JavaScript -->
+            </div>
+        </div>
+
+        <!-- صفحة الملف الشخصي -->
+        <div id="profile-page" class="hidden container mx-auto p-4 md:p-8 max-w-3xl w-full flex-grow mb-20 overflow-y-auto">
+            <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">الملف الشخصي</h1>
+            <div class="flex flex-col items-center justify-center space-y-6">
+                <img id="user-photo" src="" alt="صورة المستخدم" class="w-32 h-32 rounded-full border-4 border-blue-500 shadow-lg hidden">
+                <h2 id="user-name" class="text-2xl font-bold text-gray-800 hidden"></h2>
+                <button id="signout-btn" class="bg-red-500 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform active:scale-105 hidden">
+                    تسجيل الخروج
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- شريط التنقل السفلي -->
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 w-full bg-white shadow-2xl z-10 hidden">
+        <div class="flex justify-around items-center h-16">
+            <button id="nav-exams-btn" class="flex flex-col items-center text-blue-600 focus:outline-none p-2">
+                <i class="fas fa-clipboard-list nav-icon"></i>
+                <span class="text-xs mt-1 font-bold">الامتحانات</span>
+            </button>
+            <button id="nav-evaluations-btn" class="flex flex-col items-center text-gray-500 focus:outline-none p-2">
+                <i class="fas fa-chart-bar nav-icon"></i>
+                <span class="text-xs mt-1">التقييمات</span>
+            </button>
+            <button id="nav-profile-btn" class="flex flex-col items-center text-gray-500 focus:outline-none p-2">
+                <i class="fas fa-user nav-icon"></i>
+                <span class="text-xs mt-1">الملف الشخصي</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- مربع حواري مخصص لعرض رسائل النظام -->
+    <div id="custom-alert" class="custom-alert-overlay hidden">
+        <div class="custom-alert-box">
+            <p id="custom-alert-message" class="text-lg text-gray-700"></p>
+            <button id="custom-alert-ok" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">موافق</button>
+        </div>
+    </div>
+
+    <!-- *** مربع حواري جديد لتأكيد الحذف *** -->
+    <div id="confirm-delete-modal" class="custom-alert-overlay hidden">
+        <div class="custom-alert-box">
+            <p id="confirm-delete-message" class="text-lg text-gray-700">هل أنت متأكد أنك تريد حذف هذا الامتحان؟ لا يمكن التراجع عن هذا الإجراء.</p>
+            <div class="mt-6 flex justify-center space-x-4 space-x-reverse">
+                 <button id="confirm-delete-yes" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg">نعم, حذف</button>
+                 <button id="confirm-delete-no" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg">إلغاء</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- *** بداية التعديل: إضافة مربع حوار تأكيد حذف المادة *** -->
+    <div id="confirm-delete-subject-modal" class="custom-alert-overlay hidden">
+        <div class="custom-alert-box">
+            <p id="confirm-delete-subject-message" class="text-lg text-gray-700">هل أنت متأكد أنك تريد حذف هذه المادة؟ لا يمكن التراجع عن هذا الإجراء.</p>
+            <div class="mt-6 flex justify-center space-x-4 space-x-reverse">
+                 <button id="confirm-delete-subject-yes" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg">نعم, حذف</button>
+                 <button id="confirm-delete-subject-no" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg">إلغاء</button>
+            </div>
+        </div>
+    </div>
+    <!-- *** نهاية التعديل *** -->
+
+    <!-- *** بداية التعديل: تعديل مربع حوار إضافة مادة *** -->
+    <div id="add-subject-modal" class="custom-alert-overlay hidden">
+        <div class="custom-alert-box text-right">
+            <h2 class="text-xl font-bold mb-4">إضافة مادة جديدة</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="subject-name-input" class="block text-sm font-medium text-gray-700 mb-2">اسم المادة</label>
+                    <input type="text" id="subject-name-input" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="subject-link-input" class="block text-sm font-medium text-gray-700 mb-2">رابط التنزيل</label>
+                    <input type="url" id="subject-link-input" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://example.com/file.pdf">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-center space-x-4 space-x-reverse">
+                <button id="save-subject-btn" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg">حفظ</button>
+                <button id="cancel-subject-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg">إلغاء</button>
+            </div>
+        </div>
+    </div>
+    <!-- *** نهاية التعديل *** -->
+
+    <!-- شاشة التحميل -->
+    <div id="loading-spinner" class="loading-overlay hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <script type="module">
+        // استيراد وظائف Firebase اللازمة
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, collection, query, getDocs, getDoc, where, deleteDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        
+        // تهيئة Firebase باستخدام التكوين الذي قدمته
+        const firebaseConfig = {
+            apiKey: "AIzaSyC12345",
+            authDomain: "fir-cli-6a869.firebaseapp.com",
+            databaseURL: "https://fir-cli-6a869-default-rtdb.firebaseio.com",
+            projectId: "fir-cli-6a869",
+            storageBucket: "fir-cli-6a869.appspot.com",
+            messagingSenderId: "1019328734682",
+            appId: "1:1019328734682:web:e8c0efc11de7a52cda0931"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider();
+        
+        // مفتاح API لـ Gemini الذي قدمته
+        const geminiApiKey = "AIzaSyBGyq6bg2_MFYrmxdNRESEt1pRDHO16Kr8";
+        
+        // المتغيرات العالمية للوصول إليها
+        let userId = null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'tanya-thanawey';
+        
+        // هذا هو المصفوفة التي ستخزن أسئلة الامتحان
+        let questions = [];
+        let uploadedImages = [];
+        let examToDeleteId = null;
+        let subjectToDeleteId = null; 
+        let currentEditingExamId = null; // متغير لتخزين هوية الامتحان قيد التعديل
+
+        // الحصول على عناصر DOM الرئيسية
+        const loginPage = document.getElementById('login-page');
+        const mainContent = document.getElementById('main-content');
+        const bottomNav = document.getElementById('bottom-nav');
+        const examsPage = document.getElementById('exams-page');
+        const evaluationsPage = document.getElementById('evaluations-page');
+        const profilePage = document.getElementById('profile-page');
+        const navExamsBtn = document.getElementById('nav-exams-btn');
+        const navEvaluationsBtn = document.getElementById('nav-evaluations-btn');
+        const navProfileBtn = document.getElementById('nav-profile-btn');
+        const googleSigninBtn = document.getElementById('google-signin-btn');
+        const signoutBtn = document.getElementById('signout-btn');
+        const userPhoto = document.getElementById('user-photo');
+        const userName = document.getElementById('user-name');
+        const showManualBtn = document.getElementById('show-manual-btn');
+        const showImageBtn = document.getElementById('show-image-btn');
+        const manualContent = document.getElementById('manual-content');
+        const imageContent = document.getElementById('image-content');
+        const mainButtonsContainer = document.getElementById('main-buttons-container');
+        const mainHr = document.getElementById('main-hr');
+        const examNameInput = document.getElementById('exam-name');
+        const examDurationInput = document.getElementById('exam-duration');
+        const defaultPointsInput = document.getElementById('default-points');
+        const questionList = document.getElementById('question-list');
+        const addQuestionBtn = document.getElementById('add-question-btn');
+        const saveExamBtn = document.getElementById('save-exam-btn');
+        const newExamBtn = document.getElementById('new-exam-btn'); // زر امتحان جديد
+        const imageUploadInput = document.getElementById('image-upload');
+        const processImageBtn = document.getElementById('process-image-btn');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const uploadPlaceholder = document.getElementById('upload-placeholder');
+        const customAlertOverlay = document.getElementById('custom-alert');
+        const customAlertMessage = document.getElementById('custom-alert-message');
+        const customAlertOkBtn = document.getElementById('custom-alert-ok');
+        const publishedExamsList = document.getElementById('published-exams-list');
+        const confirmDeleteModal = document.getElementById('confirm-delete-modal');
+        const confirmDeleteYesBtn = document.getElementById('confirm-delete-yes');
+        const confirmDeleteNoBtn = document.getElementById('confirm-delete-no'); 
+        // عناصر صفحة التقييمات
+        const addSubjectBtn = document.getElementById('add-subject-btn');
+        const addSubjectModal = document.getElementById('add-subject-modal');
+        const subjectNameInput = document.getElementById('subject-name-input');
+        const subjectLinkInput = document.getElementById('subject-link-input');
+        const saveSubjectBtn = document.getElementById('save-subject-btn');
+        const cancelSubjectBtn = document.getElementById('cancel-subject-btn');
+        const subjectsContainer = document.getElementById('subjects-container');
+        const confirmDeleteSubjectModal = document.getElementById('confirm-delete-subject-modal');
+        const confirmDeleteSubjectYesBtn = document.getElementById('confirm-delete-subject-yes');
+        const confirmDeleteSubjectNoBtn = document.getElementById('confirm-delete-subject-no');
+
+        // دالة لعرض مربع حواري مخصص
+        function showCustomAlert(message) {
+            customAlertMessage.textContent = message;
+            customAlertOverlay.classList.remove('hidden');
+        }
+        // دالة لإغلاق مربع حواري مخصص
+        customAlertOkBtn.addEventListener('click', () => {
+            customAlertOverlay.classList.add('hidden');
+        });
+
+        // وظائف مربع تأكيد الحذف
+        confirmDeleteNoBtn.addEventListener('click', () => {
+            confirmDeleteModal.classList.add('hidden');
+            examToDeleteId = null;
+        });
+        confirmDeleteYesBtn.addEventListener('click', async () => {
+            if (examToDeleteId) {
+                try {
+                    const examDocRef = doc(db, `artifacts/${appId}/public/data/exams`, examToDeleteId);
+                    await deleteDoc(examDocRef);
+                    showCustomAlert('تم حذف الامتحان بنجاح.');
+                    renderPublishedExams(); // إعادة عرض القائمة المحدثة
+                } catch (error) {
+                    console.error("فشل حذف الامتحان:", error);
+                    showCustomAlert('حدث خطأ أثناء حذف الامتحان.');
+                } finally {
+                    confirmDeleteModal.classList.add('hidden');
+                    examToDeleteId = null;
+                }
+            }
+        });
+        
+        confirmDeleteSubjectNoBtn.addEventListener('click', () => {
+            confirmDeleteSubjectModal.classList.add('hidden');
+            subjectToDeleteId = null;
+        });
+        confirmDeleteSubjectYesBtn.addEventListener('click', async () => {
+            if (subjectToDeleteId && userId) {
+                try {
+                    // *** بداية التعديل: تعديل مسار الحذف ليطابق المسار العام ***
+                    const subjectDocRef = doc(db, `artifacts/${appId}/public/data/subjects`, subjectToDeleteId);
+                    // *** نهاية التعديل ***
+                    await deleteDoc(subjectDocRef);
+                    showCustomAlert('تم حذف المادة بنجاح.');
+                    renderSubjects(); // إعادة عرض القائمة المحدثة
+                } catch (error) {
+                    console.error("فشل حذف المادة:", error);
+                    showCustomAlert(`فشل حذف المادة: ${error.message}`);
+                } finally {
+                    confirmDeleteSubjectModal.classList.add('hidden');
+                    subjectToDeleteId = null;
+                }
+            }
+        });
+
+        // *** بداية التعديل: تعديل دالة عرض المواد ***
+        async function renderSubjects() {
+            if (!userId) {
+                subjectsContainer.innerHTML = `<p class="text-center text-gray-600 col-span-full">الرجاء تسجيل الدخول لعرض المواد.</p>`;
+                return;
+            }
+            subjectsContainer.innerHTML = ''; 
+            
+            try {
+                // تعديل الاستعلام ليقرأ من المسار العام ويفلتر حسب المستخدم الحالي
+                const q = query(collection(db, `artifacts/${appId}/public/data/subjects`), where("creatorId", "==", userId));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    subjectsContainer.innerHTML = `<p class="text-center text-gray-600 col-span-full">لم يتم إضافة أي مواد بعد.</p>`;
+                } else {
+                    querySnapshot.forEach((doc) => {
+                        const subject = doc.data();
+                        const subjectCard = document.createElement('div');
+                        subjectCard.classList.add('bg-white', 'rounded-xl', 'shadow-md', 'p-6', 'flex', 'flex-col', 'items-center', 'justify-center', 'space-y-4', 'hover:shadow-lg', 'transition-shadow', 'relative');
+                        subjectCard.innerHTML = `
+                            <button class="absolute top-2 left-2 text-gray-400 hover:text-red-600 transition-colors delete-subject-btn" data-id="${doc.id}">
+                                <i class="fas fa-times fa-lg"></i>
+                            </button>
+                            <h3 class="text-xl font-bold text-gray-800 text-center pt-4">${subject.name}</h3>
+                            <a href="${subject.link || '#'}" target="_blank" rel="noopener noreferrer" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center space-x-2 space-x-reverse no-underline">
+                                <i class="fas fa-download"></i>
+                                <span>تنزيل</span>
+                            </a>
+                        `;
+                        subjectsContainer.appendChild(subjectCard);
+                    });
+
+                    document.querySelectorAll('.delete-subject-btn').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            e.stopPropagation(); 
+                            subjectToDeleteId = e.currentTarget.dataset.id;
+                            confirmDeleteSubjectModal.classList.remove('hidden');
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error("فشل عرض المواد:", error);
+                showCustomAlert('حدث خطأ أثناء عرض المواد.');
+            }
+        }
+        // *** نهاية التعديل ***
+        
+        addSubjectBtn.addEventListener('click', () => {
+            subjectNameInput.value = '';
+            subjectLinkInput.value = '';
+            addSubjectModal.classList.remove('hidden');
+        });
+        cancelSubjectBtn.addEventListener('click', () => {
+            addSubjectModal.classList.add('hidden');
+        });
+
+        // *** بداية التعديل: تعديل دالة حفظ المادة ***
+        saveSubjectBtn.addEventListener('click', async () => {
+            const subjectName = subjectNameInput.value.trim();
+            const subjectLink = subjectLinkInput.value.trim();
+            
+            if (subjectName === '' || subjectLink === '') {
+                showCustomAlert('الرجاء إدخال اسم المادة ورابط التنزيل.');
+                return;
+            }
+            if (!userId) {
+                showCustomAlert('يجب عليك تسجيل الدخول لإضافة مادة.');
+                return;
+            }
+            try {
+                const subjectData = { 
+                    name: subjectName,
+                    link: subjectLink,
+                    creatorId: userId,
+                    createdAt: new Date().toISOString()
+                };
+                // تعديل المسار ليحفظ في المسار العام
+                const subjectCollectionRef = collection(db, `artifacts/${appId}/public/data/subjects`);
+                await addDoc(subjectCollectionRef, subjectData);
+                showCustomAlert('تم إضافة المادة بنجاح.');
+                addSubjectModal.classList.add('hidden');
+                renderSubjects(); 
+            } catch (error) {
+                console.error("فشل إضافة المادة:", error);
+                showCustomAlert('حدث خطأ أثناء إضافة المادة.');
+            }
+        });
+        // *** نهاية التعديل ***
+
+        function showExamContent(type) {
+            if (type === 'manual') {
+                manualContent.classList.remove('hidden');
+                imageContent.classList.add('hidden');
+                mainButtonsContainer.classList.remove('hidden');
+                mainHr.classList.remove('hidden');
+                showManualBtn.classList.add('bg-blue-600', 'text-white');
+                showManualBtn.classList.remove('bg-gray-300', 'text-gray-800');
+                showImageBtn.classList.add('bg-gray-300', 'text-gray-800');
+                showImageBtn.classList.remove('bg-blue-600', 'text-white');
+            } else if (type === 'image') {
+                manualContent.classList.add('hidden');
+                imageContent.classList.remove('hidden');
+                mainButtonsContainer.classList.add('hidden');
+                mainHr.classList.add('hidden');
+                showImageBtn.classList.add('bg-blue-600', 'text-white');
+                showImageBtn.classList.remove('bg-gray-300', 'text-gray-800');
+                showManualBtn.classList.add('bg-gray-300', 'text-gray-800');
+                showManualBtn.classList.remove('bg-blue-600', 'text-white');
+            }
+        }
+        
+        function showPage(pageId) {
+            examsPage.classList.add('hidden');
+            evaluationsPage.classList.add('hidden');
+            profilePage.classList.add('hidden');
+            navExamsBtn.classList.remove('text-blue-600', 'font-bold');
+            navExamsBtn.classList.add('text-gray-500');
+            navEvaluationsBtn.classList.remove('text-blue-600', 'font-bold');
+            navEvaluationsBtn.classList.add('text-gray-500');
+            navProfileBtn.classList.remove('text-blue-600', 'font-bold');
+            navProfileBtn.classList.add('text-gray-500');
+            
+            if (pageId === 'exams-page') {
+                examsPage.classList.remove('hidden');
+                navExamsBtn.classList.add('text-blue-600', 'font-bold');
+                navExamsBtn.classList.remove('text-gray-500');
+            } else if (pageId === 'evaluations-page') {
+                evaluationsPage.classList.remove('hidden');
+                navEvaluationsBtn.classList.add('text-blue-600', 'font-bold');
+                navEvaluationsBtn.classList.remove('text-gray-500');
+                renderSubjects(); 
+            } else if (pageId === 'profile-page') {
+                profilePage.classList.remove('hidden');
+                navProfileBtn.classList.add('text-blue-600', 'font-bold');
+                navProfileBtn.classList.remove('text-gray-500');
+            }
+        }
+        
+        navExamsBtn.addEventListener('click', () => showPage('exams-page'));
+        navEvaluationsBtn.addEventListener('click', () => showPage('evaluations-page'));
+        navProfileBtn.addEventListener('click', () => showPage('profile-page'));
+
+        googleSigninBtn.addEventListener('click', () => signInWithPopup(auth, googleProvider).catch(err => showCustomAlert('فشل تسجيل الدخول.')));
+        signoutBtn.addEventListener('click', () => signOut(auth).catch(err => showCustomAlert('فشل تسجيل الخروج.')));
+        
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                loginPage.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                bottomNav.classList.remove('hidden');
+                userName.textContent = user.displayName;
+                userPhoto.src = user.photoURL;
+                userPhoto.classList.remove('hidden');
+                userName.classList.remove('hidden');
+                signoutBtn.classList.remove('hidden');
+                showPage('exams-page');
+                showExamContent('manual');
+                renderPublishedExams();
+                if (questions.length === 0) addQuestion();
+                renderSubjects(); 
+            } else {
+                userId = null;
+                loginPage.classList.remove('hidden');
+                mainContent.classList.add('hidden');
+                bottomNav.classList.add('hidden');
+                resetExamForm();
+                questions = [];
+                questionList.innerHTML = '';
+                publishedExamsList.innerHTML = '';
+                subjectsContainer.innerHTML = '';
+            }
+        });
+
+        function renderQuestion(questionData, index) {
+            const questionElement = document.createElement('div');
+            questionElement.id = questionData.id;
+            questionElement.classList.add('bg-white', 'p-6', 'rounded-xl', 'shadow-lg', 'mb-6', 'relative');
+            questionElement.innerHTML = `
+                <div class="question-number-box">
+                    <span>${index + 1}</span>
+                </div>
+                <div class="flex justify-end items-center mb-4">
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                        <label class="block text-sm font-medium text-gray-700">النقاط:</label>
+                        <input type="number" value="${questionData.points}" class="question-points w-16 p-1 border-b-2 border-gray-300 text-center bg-transparent focus:outline-none">
+                        <button class="remove-question-btn text-gray-400 hover:text-red-600 transition-colors" data-id="${questionData.id}">
+                            <i class="fas fa-trash fa-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <textarea id="question-text-${questionData.id}" class="w-full p-2 mt-1 border-none rounded-lg focus:outline-none focus:ring-0 text-lg text-gray-800 break-words bg-transparent resize-none" placeholder="اكتب نص السؤال هنا..." rows="2">${questionData.text}</textarea>
+                </div>
+                <div class="space-y-3">
+                    ${questionData.options.map((option, optIndex) => {
+                        const isChecked = optIndex === questionData.correctAnswer;
+                        const bgColor = isChecked ? 'bg-green-100' : 'bg-gray-50';
+                        return `
+                            <div class="flex items-center space-x-2 space-x-reverse ${bgColor} p-2 rounded-lg transition-colors duration-200">
+                                <input type="radio" name="correct-answer-${questionData.id}" class="correct-answer-radio form-radio h-5 w-5 text-green-600 focus:ring-green-500" data-index="${optIndex}" data-question-id="${questionData.id}" ${isChecked ? 'checked' : ''}>
+                                <input type="text" id="option-${questionData.id}-${optIndex}" class="question-option w-full p-1 border-none bg-transparent focus:outline-none focus:ring-0 text-base text-gray-700" data-index="${optIndex}" value="${option}" placeholder="خيار ${optIndex + 1}">
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            questionList.appendChild(questionElement);
+
+            // Auto-resize textarea
+            const questionTextarea = questionElement.querySelector(`#question-text-${questionData.id}`);
+            const autoResizeTextarea = (el) => {
+                el.style.height = 'auto';
+                el.style.height = (el.scrollHeight) + 'px';
+            };
+            questionTextarea.addEventListener('input', (e) => {
+                const questionToUpdate = questions.find(q => q.id === questionData.id);
+                if (questionToUpdate) questionToUpdate.text = e.target.value;
+                autoResizeTextarea(e.target);
+            });
+            setTimeout(() => autoResizeTextarea(questionTextarea), 0);
+
+
+            const optionInputs = questionElement.querySelectorAll('.question-option');
+            optionInputs.forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const questionToUpdate = questions.find(q => q.id === questionData.id);
+                    if (questionToUpdate) {
+                        const optionIndex = parseInt(e.target.dataset.index);
+                        questionToUpdate.options[optionIndex] = e.target.value;
+                    }
+                });
+            });
+
+            const correctRadios = questionElement.querySelectorAll('.correct-answer-radio');
+            correctRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const questionId = e.target.name.replace('correct-answer-', '');
+                    const questionToUpdate = questions.find(q => q.id === questionId);
+                    if (questionToUpdate) {
+                        questionToUpdate.correctAnswer = parseInt(e.target.dataset.index);
+                    }
+
+                    // Update styling for all options in the same question
+                    const allOptionContainers = document.querySelectorAll(`input[name="correct-answer-${questionId}"]`);
+                    allOptionContainers.forEach(r => {
+                        const container = r.parentElement;
+                        if (r.checked) {
+                            container.classList.add('bg-green-100');
+                            container.classList.remove('bg-gray-50');
+                        } else {
+                            container.classList.remove('bg-green-100');
+                            container.classList.add('bg-gray-50');
+                        }
+                    });
+                });
+            });
+
+            const pointsInput = questionElement.querySelector('.question-points');
+            pointsInput.addEventListener('input', (e) => {
+                const questionToUpdate = questions.find(q => q.id === questionData.id);
+                if (questionToUpdate) {
+                    questionToUpdate.points = parseFloat(e.target.value) || 0;
+                }
+            });
+
+            const removeButton = questionElement.querySelector('.remove-question-btn');
+            removeButton.addEventListener('click', () => {
+                questions = questions.filter(q => q.id !== questionData.id);
+                questionElement.remove();
+                updateQuestionNumbers();
+            });
+        }
+
+        function addQuestion() {
+            const questionIndex = questions.length;
+            const questionId = `q-${Date.now()}-${questionIndex}`;
+            const newQuestion = {
+                id: questionId,
+                text: '',
+                type: 'multiple-choice',
+                options: ['', '', '', ''],
+                correctAnswer: null,
+                points: parseFloat(defaultPointsInput.value) || 1,
+            };
+            questions.push(newQuestion);
+            renderQuestion(newQuestion, questionIndex);
+        }
+
+        function updateQuestionNumbers() {
+            const questionElements = questionList.querySelectorAll('.bg-white.relative'); // More specific selector
+            questionElements.forEach((el, index) => {
+                const numberBox = el.querySelector('.question-number-box span');
+                if (numberBox) {
+                    numberBox.textContent = index + 1;
+                }
+            });
+        }
+
+        async function loadExamForEditing(examId) {
+            loadingSpinner.classList.remove('hidden');
+            try {
+                const examDocRef = doc(db, `artifacts/${appId}/public/data/exams`, examId);
+                const docSnap = await getDoc(examDocRef);
+
+                if (docSnap.exists()) {
+                    const examData = docSnap.data();
+                    
+                    examNameInput.value = examData.name;
+                    examDurationInput.value = examData.duration;
+                    
+                    questions = examData.questions.map((q, index) => ({
+                        ...q,
+                        id: `q-loaded-${Date.now()}-${index}` 
+                    }));
+                    
+                    questionList.innerHTML = '';
+                    questions.forEach((q, index) => {
+                        renderQuestion(q, index); 
+                    });
+
+                    currentEditingExamId = examId;
+                    saveExamBtn.textContent = 'تحديث الامتحان';
+                    saveExamBtn.classList.remove('bg-green-600');
+                    saveExamBtn.classList.add('bg-yellow-500'); 
+                    newExamBtn.classList.remove('hidden'); 
+
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    showCustomAlert('تم تحميل الامتحان للتعديل.');
+
+                } else {
+                    showCustomAlert("لم يتم العثور على الامتحان.");
+                }
+            } catch (error) {
+                console.error("فشل تحميل الامتحان للتعديل:", error);
+                showCustomAlert('حدث خطأ أثناء تحميل الامتحان.');
+            } finally {
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+
+        async function renderPublishedExams() {
+            if (!userId) {
+                publishedExamsList.innerHTML = `<p class="text-center text-gray-600">الرجاء تسجيل الدخول لعرض الامتحانات.</p>`;
+                return;
+            }
+            publishedExamsList.innerHTML = '';
+            const loadingHtml = `<div class="flex justify-center py-8"><div class="spinner"></div></div>`;
+            publishedExamsList.innerHTML = loadingHtml;
+
+            try {
+                const q = query(collection(db, `artifacts/${appId}/public/data/exams`), where("creatorId", "==", userId));
+                const querySnapshot = await getDocs(q);
+                
+                publishedExamsList.innerHTML = ''; 
+                
+                if (querySnapshot.empty) {
+                    publishedExamsList.innerHTML = `<p class="text-center text-gray-600">لا توجد امتحانات منشورة حتى الآن.</p>`;
+                } else {
+                    querySnapshot.forEach((doc) => {
+                        const exam = doc.data();
+                        const examItem = document.createElement('div');
+                        examItem.classList.add('bg-white', 'p-4', 'rounded-xl', 'shadow-md', 'flex', 'flex-col', 'md:flex-row', 'justify-between', 'items-center', 'space-y-4', 'md:space-y-0');
+                        examItem.innerHTML = `
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">${exam.name}</h3>
+                                <p class="text-gray-600">المدة: ${exam.duration} دقيقة | عدد الأسئلة: ${exam.questions.length}</p>
+                            </div>
+                            <div class="flex space-x-2 space-x-reverse">
+                                <button class="bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-600 transition-colors view-exam-btn" data-id="${doc.id}">
+                                    عرض/تعديل
+                                </button>
+                                <button class="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors delete-exam-btn" data-id="${doc.id}">
+                                    حذف
+                                </button>
+                            </div>
+                        `;
+                        publishedExamsList.appendChild(examItem);
+                    });
+                }
+
+                document.querySelectorAll('.delete-exam-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        examToDeleteId = e.currentTarget.dataset.id;
+                        confirmDeleteModal.classList.remove('hidden');
+                    });
+                });
+                
+                document.querySelectorAll('.view-exam-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const examId = e.currentTarget.dataset.id;
+                        loadExamForEditing(examId);
+                    });
+                });
+
+            } catch (error) {
+                console.error("فشل عرض الامتحانات المنشورة:", error);
+                publishedExamsList.innerHTML = `<p class="text-center text-red-500">حدث خطأ أثناء تحميل الامتحانات.</p>`;
+            }
+        }
+
+        function resetExamForm() {
+            examNameInput.value = '';
+            examDurationInput.value = '';
+            defaultPointsInput.value = '1';
+            questionList.innerHTML = '';
+            questions = [];
+            currentEditingExamId = null;
+
+            saveExamBtn.textContent = 'حفظ الامتحان';
+            saveExamBtn.classList.remove('bg-yellow-500');
+            saveExamBtn.classList.add('bg-green-600');
+            newExamBtn.classList.add('hidden');
+
+            addQuestion(); 
+        }
+        
+        newExamBtn.addEventListener('click', () => {
+            resetExamForm();
+            showCustomAlert('تم مسح النموذج. يمكنك الآن إنشاء امتحان جديد.');
+        });
+
+        saveExamBtn.addEventListener('click', async () => {
+            if (!userId) {
+                showCustomAlert('يجب عليك تسجيل الدخول لحفظ الامتحان.');
+                return;
+            }
+        
+            const examName = examNameInput.value.trim();
+            const examDuration = examDurationInput.value.trim();
+        
+            if (!examName || !examDuration || questions.length === 0) {
+                showCustomAlert('الرجاء إدخال اسم الامتحان، المدة، وإضافة سؤال واحد على الأقل.');
+                return;
+            }
+        
+            const validQuestions = questions.map(q => {
+                const { id, ...rest } = q;
+                return rest;
+            }).filter(q => q.text.trim() !== '' && q.options.every(o => o.trim() !== ''));
+        
+            if (validQuestions.length !== questions.length) {
+                showCustomAlert('الرجاء التأكد من ملء جميع حقول الأسئلة والخيارات.');
+                return;
+            }
+        
+            loadingSpinner.classList.remove('hidden');
+            
+            try {
+                const examData = {
+                    name: examName,
+                    duration: examDuration,
+                    questions: validQuestions,
+                    creatorId: userId,
+                };
+        
+                if (currentEditingExamId) {
+                    const examDocRef = doc(db, `artifacts/${appId}/public/data/exams`, currentEditingExamId);
+                    await updateDoc(examDocRef, examData);
+                    showCustomAlert('تم تحديث الامتحان بنجاح!');
+                } else {
+                    examData.createdAt = new Date().toISOString();
+                    const examsCollection = collection(db, `artifacts/${appId}/public/data/exams`);
+                    await addDoc(examsCollection, examData);
+                    showCustomAlert('تم حفظ الامتحان بنجاح!');
+                }
+        
+                resetExamForm();
+                renderPublishedExams(); 
+            } catch (error) {
+                console.error("فشل حفظ/تحديث الامتحان:", error);
+                showCustomAlert('حدث خطأ أثناء حفظ الامتحان.');
+            } finally {
+                loadingSpinner.classList.add('hidden');
+            }
+        });
+        
+        addQuestionBtn.addEventListener('click', addQuestion);
+
+        showManualBtn.addEventListener('click', () => showExamContent('manual'));
+        showImageBtn.addEventListener('click', () => showExamContent('image'));
+        
+        function imageToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function removeImage(id) {
+            uploadedImages = uploadedImages.filter(img => img.id !== id);
+            const imageElement = document.querySelector(`.image-preview-item[data-id="${id}"]`);
+            if (imageElement) {
+                imageElement.remove();
+            }
+            if (uploadedImages.length === 0) {
+                uploadPlaceholder.classList.remove('hidden');
+                processImageBtn.disabled = true;
+            }
+        }
+        
+        imageUploadInput.addEventListener('change', (event) => {
+            const files = Array.from(event.target.files);
+            
+            files.forEach(file => {
+                const isDuplicate = uploadedImages.some(img => img.file.name === file.name && img.file.size === file.size);
+                if (!isDuplicate) {
+                    const uniqueId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    uploadedImages.push({ id: uniqueId, file: file });
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const previewItem = document.createElement('div');
+                        previewItem.classList.add('relative', 'image-preview-item');
+                        previewItem.dataset.id = uniqueId;
+                        previewItem.innerHTML = `
+                            <img src="${e.target.result}" class="w-full h-full object-cover rounded-lg shadow-md">
+                            <button class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-75 hover:opacity-100 transition-opacity remove-image-btn" data-id="${uniqueId}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        imagePreviewContainer.appendChild(previewItem);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            if (uploadedImages.length > 0) {
+                uploadPlaceholder.classList.add('hidden');
+                processImageBtn.disabled = false;
+            } else {
+                uploadPlaceholder.classList.remove('hidden');
+                processImageBtn.disabled = true;
+            }
+
+            setTimeout(() => {
+                document.querySelectorAll('.remove-image-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault(); 
+                        const id = e.currentTarget.dataset.id;
+                        removeImage(id);
+                    });
+                });
+            }, 100);
+            
+            event.target.value = '';
+        });
+        
+        processImageBtn.addEventListener('click', async () => {
+            if (uploadedImages.length === 0) {
+                showCustomAlert('الرجاء رفع صورة واحدة على الأقل.');
+                return;
+            }
+
+            loadingSpinner.classList.remove('hidden');
+
+            try {
+                const base64Images = await Promise.all(uploadedImages.map(item => imageToBase64(item.file)));
+                
+                const textPrompt = `
+                    استخرج الأسئلة والإجابات والخيارات من هذه الصور بالترتيب الذي تم تحميله. يجب أن يكون الناتج مصفوفة من الكائنات، كل كائن يمثل سؤالاً. يجب أن يحتوي كل كائن على الحقول التالية: "text" (نص السؤال), "options" (مصفوفة من الخيارات), و "correctAnswer" (فهرس الخيار الصحيح يبدأ من 0).
+                `;
+
+                const imageParts = base64Images.map(data => ({
+                    inlineData: {
+                        mimeType: 'image/png', 
+                        data: data
+                    }
+                }));
+
+                const parts = [
+                    { text: textPrompt },
+                    ...imageParts 
+                ];
+
+                const payload = {
+                    contents: [{
+                        role: "user",
+                        parts: parts
+                    }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    "text": { "type": "STRING" },
+                                    "options": {
+                                        "type": "ARRAY",
+                                        "items": { "type": "STRING" }
+                                    },
+                                    "correctAnswer": { "type": "INTEGER" }
+                                }
+                            }
+                        }
+                    }
+                };
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${geminiApiKey}`;
+                let response;
+                let result;
+                let retries = 0;
+                const maxRetries = 5;
+                const baseDelay = 1000; 
+
+                while (retries < maxRetries) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.ok) {
+                            result = await response.json();
+                            break;
+                        } else if (response.status === 429) {
+                            retries++;
+                            const delay = baseDelay * Math.pow(2, retries);
+                            await new Promise(res => setTimeout(res, delay));
+                        } else {
+                            throw new Error(`API error: ${response.statusText}`);
+                        }
+                    } catch (error) {
+                        if (retries >= maxRetries) {
+                            throw error;
+                        }
+                    }
+                }
+                
+                if (result && result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    
+                    const jsonText = result.candidates[0].content.parts[0].text;
+                    const parsedQuestions = JSON.parse(jsonText);
+                    
+                    questions = parsedQuestions.map((q, index) => ({
+                        id: `q-image-${Date.now()}-${index}`,
+                        text: q.text,
+                        type: 'multiple-choice',
+                        options: q.options,
+                        correctAnswer: q.correctAnswer,
+                        points: parseFloat(defaultPointsInput.value) || 1,
+                    }));
+
+                    questionList.innerHTML = '';
+                    questions.forEach((q, index) => {
+                        renderQuestion(q, index);
+                    });
+                    
+                    showCustomAlert('تم استخراج الأسئلة بنجاح! يمكنك الآن مراجعتها وحفظها.');
+                    showExamContent('manual'); 
+                    mainButtonsContainer.classList.remove('hidden'); 
+                    mainHr.classList.remove('hidden');
+                } else {
+                    showCustomAlert('فشل استخراج الأسئلة. الرجاء المحاولة مرة أخرى.');
+                }
+
+            } catch (error) {
+                console.error("فشل تحليل الصور:", error);
+                showCustomAlert('حدث خطأ أثناء تحليل الصور. الرجاء التأكد من أن الصور تحتوي على أسئلة واضحة.');
+            } finally {
+                loadingSpinner.classList.add('hidden');
+            }
+        });
+
+    </script>
+</body>
+</html>
