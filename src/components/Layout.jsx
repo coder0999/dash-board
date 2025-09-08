@@ -1,11 +1,11 @@
 import React from 'react';
 import BottomNav from './BottomNav';
 
-const Layout = ({ children }) => {
+const Layout = ({ children, userData }) => {
   return (
     <div id="main-content" className="flex-grow flex flex-col">
       {children}
-      <BottomNav />
+      <BottomNav userData={userData} />
     </div>
   );
 };

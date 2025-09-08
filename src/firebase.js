@@ -18,4 +18,4 @@ const auth = getAuth(app);
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-export { db, auth, GEMINI_API_KEY };
+export { db, auth, GEMINI_API_KEY, firebaseConfig };

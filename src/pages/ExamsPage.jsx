@@ -10,22 +10,19 @@ import { db } from '../firebase';
 import useAuth from '../hooks/useAuth';
 
 const ExamsPage = () => {
-  const { user } = useAuth();
-  const { showAlert, showLoading, hideLoading } = useUI();
+  const { authUser: user } = useAuth();
+  const { showAlert } = useUI();
   const [examName, setExamName] = useState('');
   const [examDuration, setExamDuration] = useState('');
   const [defaultPoints, setDefaultPoints] = useState(1);
-  const [inputMode, setInputMode] = useState('manual'); // 'manual' or 'image'
+  const [inputMode, setInputMode] = useState('manual');
   const [questions, setQuestions] = useState([]);
   const [currentEditingExamId, setCurrentEditingExamId] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const appId = 'tanya-thanawey'; // This should probably be an environment variable
-
   useEffect(() => {
-    // Ensure at least one question exists when in manual mode and questions array is empty
     if (inputMode === 'manual' && questions.length === 0) {
-      setQuestions([{ 
+      setQuestions([{
         id: `q-${Date.now()}-0`,
         text: '',
         type: 'multiple-choice',
@@ -40,7 +37,7 @@ const ExamsPage = () => {
     setExamName('');
     setExamDuration('');
     setDefaultPoints(1);
-    setQuestions([]); // This will trigger useEffect to add a new question if in manual mode
+    setQuestions([]);
     setCurrentEditingExamId(null);
   };
 
@@ -49,67 +46,56 @@ const ExamsPage = () => {
       showAlert('يجب عليك تسجيل الدخول لحفظ الامتحان.');
       return;
     }
-
     const examData = {
       name: examName.trim(),
       duration: parseFloat(examDuration) || 0,
       questions: questions.map(q => {
-        const { id, ...rest } = q; // Remove temporary ID
+        const { id, ...rest } = q;
         return rest;
       }),
       creatorId: user.uid,
     };
-
     if (!examData.name || !examData.duration || examData.questions.length === 0) {
       showAlert('الرجاء إدخال اسم الامتحان، المدة، وإضافة سؤال واحد على الأقل.');
       return;
     }
-
     const validQuestions = examData.questions.filter(q =>
       q.text.trim() !== '' && q.options.every(o => o.trim() !== '')
     );
-
     if (validQuestions.length !== examData.questions.length) {
       showAlert('الرجاء التأكد من ملء جميع حقول الأسئلة والخيارات.');
       return;
     }
-
-    showLoading();
-
     try {
       if (currentEditingExamId) {
-        const examDocRef = doc(db, `artifacts/${appId}/public/data/exams`, currentEditingExamId);
+        const examDocRef = doc(db, 'exams', currentEditingExamId);
         await updateDoc(examDocRef, examData);
         showAlert('تم تحديث الامتحان بنجاح!');
       } else {
         examData.createdAt = new Date().toISOString();
-        const examsCollection = collection(db, `artifacts/${appId}/public/data/exams`);
+        const examsCollection = collection(db, 'exams');
         await addDoc(examsCollection, examData);
         showAlert('تم حفظ الامتحان بنجاح!');
       }
       resetExamForm();
-      setRefreshTrigger(prev => prev + 1); // Trigger re-fetch of published exams list
+      setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error("فشل حفظ/تحديث الامتحان:", error);
       showAlert('حدث خطأ أثناء حفظ الامتحان.');
-    } finally {
-      hideLoading();
     }
   };
 
   const loadExamForEditing = async (examId) => {
-    showLoading();
     try {
-      const examDocRef = doc(db, `artifacts/${appId}/public/data/exams`, examId);
+      const examDocRef = doc(db, 'exams', examId);
       const docSnap = await getDoc(examDocRef);
-
       if (docSnap.exists()) {
         const examData = docSnap.data();
         setExamName(examData.name);
         setExamDuration(examData.duration);
         setQuestions(examData.questions.map((q, index) => ({
           ...q,
-          id: `q-loaded-${Date.now()}-${index}` // Assign temporary ID for React key
+          id: `q-loaded-${Date.now()}-${index}`
         })));
         setCurrentEditingExamId(examId);
         showAlert('تم تحميل الامتحان للتعديل.');
@@ -120,17 +106,13 @@ const ExamsPage = () => {
     } catch (error) {
       console.error("فشل تحميل الامتحان للتعديل:", error);
       showAlert('حدث خطأ أثناء تحميل الامتحان.');
-    } finally {
-      hideLoading();
     }
   };
 
   return (
     <div className="container mx-auto p-4 md:p-8 max-w-3xl w-full flex-grow mb-20 overflow-y-auto">
       <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">إنشاء امتحان</h1>
-
       <InputModeSwitcher currentMode={inputMode} setMode={setInputMode} />
-
       <ExamMetadata
         examName={examName}
         setExamName={setExamName}
@@ -139,7 +121,6 @@ const ExamsPage = () => {
         defaultPoints={defaultPoints}
         setDefaultPoints={setDefaultPoints}
       />
-
       {inputMode === 'manual' && (
         <QuestionEditor
           questions={questions}
@@ -147,19 +128,16 @@ const ExamsPage = () => {
           defaultPoints={defaultPoints}
         />
       )}
-
       {inputMode === 'image' && (
         <ImageUploader
           onQuestionsExtracted={(extractedQuestions) => {
             setQuestions(extractedQuestions);
-            setInputMode('manual'); // Switch to manual mode after extraction
+            setInputMode('manual');
           }}
           defaultPoints={defaultPoints}
         />
       )}
-
       <hr className="my-8 border-gray-300" />
-
       <div className="flex justify-center space-x-4 space-x-reverse">
         <button
           className="bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform active:scale-105"
@@ -176,7 +154,6 @@ const ExamsPage = () => {
           </button>
         )}
       </div>
-
       <PublishedExamsList onEditExam={loadExamForEditing} refreshTrigger={refreshTrigger} />
     </div>
   );

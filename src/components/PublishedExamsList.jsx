@@ -6,19 +6,17 @@ import { useUI } from '../context/UIContext';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 
 const PublishedExamsList = ({ onEditExam, refreshTrigger }) => {
-  const { user } = useAuth();
+  const { authUser: user } = useAuth();
   const { showAlert } = useUI();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [examToDelete, setExamToDelete] = useState(null);
 
-  const appId = 'tanya-thanawey';
-
   const fetchExams = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const q = query(collection(db, `artifacts/${appId}/public/data/exams`), where("creatorId", "==", user.uid));
+      const q = query(collection(db, 'exams'), where("creatorId", "==", user.uid));
       const querySnapshot = await getDocs(q);
       const examsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setExams(examsData);
@@ -41,7 +39,7 @@ const PublishedExamsList = ({ onEditExam, refreshTrigger }) => {
   const confirmDelete = async () => {
     if (!examToDelete) return;
     try {
-      const examDocRef = doc(db, `artifacts/${appId}/public/data/exams`, examToDelete);
+      const examDocRef = doc(db, 'exams', examToDelete);
       await deleteDoc(examDocRef);
       showAlert('تم حذف الامتحان بنجاح.');
       setExamToDelete(null);

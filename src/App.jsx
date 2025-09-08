@@ -7,31 +7,31 @@ import Layout from './components/Layout';
 import ExamsPage from './pages/ExamsPage';
 import EvaluationsPage from './pages/EvaluationsPage';
 import ProfilePage from './pages/ProfilePage';
+import StorePage from './pages/StorePage'; // Import the new page
 import LoadingSpinner from './components/LoadingSpinner';
 
 function App() {
-  const { user, loading, handleLogin, handleLogout } = useAuth();
+  const { authUser, userData, loading, handleLogin, handleLogout } = useAuth();
 
   if (loading) {
     return <LoadingSpinner />;
   }
 
   return (
-    <UIProvider>
-      <BrowserRouter basename="/dash-board">
-        {user ? (
-          <Layout>
-            <Routes>
-              <Route path="/" element={<ExamsPage />} />
-              <Route path="/evaluations" element={<EvaluationsPage />} />
-              <Route path="/profile" element={<ProfilePage handleLogout={handleLogout} user={user} />} />
-            </Routes>
-          </Layout>
-        ) : (
-          <LoginPage handleLogin={handleLogin} />
-        )}
-      </BrowserRouter>
-    </UIProvider>
+    <>
+      {authUser ? (
+        <Layout userData={userData}>
+          <Routes>
+            <Route index element={<ExamsPage />} />
+            <Route path="/evaluations" element={<EvaluationsPage />} />
+            <Route path="/store" element={<StorePage />} />
+            <Route path="/profile" element={<ProfilePage handleLogout={handleLogout} user={userData} />} />
+          </Routes>
+        </Layout>
+      ) : (
+        <LoginPage handleLogin={handleLogin} />
+      )}
+    </>
   );
 }
 
