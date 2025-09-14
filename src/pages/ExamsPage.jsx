@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ExamMetadata from '../components/ExamMetadata';
-import InputModeSwitcher from '../components/InputModeSwitcher';
+import TabButton from '../components/TabButton';
 import QuestionEditor from '../components/QuestionEditor';
 import ImageUploader from '../components/ImageUploader';
 import PublishedExamsList from '../components/PublishedExamsList';
@@ -15,13 +15,14 @@ const ExamsPage = () => {
   const [examName, setExamName] = useState('');
   const [examDuration, setExamDuration] = useState('');
   const [defaultPoints, setDefaultPoints] = useState(1);
-  const [inputMode, setInputMode] = useState('manual');
+  const [activeTab, setActiveTab] = useState('published'); // Default to published exams
   const [questions, setQuestions] = useState([]);
   const [currentEditingExamId, setCurrentEditingExamId] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    if (inputMode === 'manual' && questions.length === 0) {
+    // Only add a default question if in manual mode for a new exam
+    if (activeTab === 'manual' && questions.length === 0 && !currentEditingExamId) {
       setQuestions([{
         id: `q-${Date.now()}-0`,
         text: '',
@@ -31,7 +32,7 @@ const ExamsPage = () => {
         points: parseFloat(defaultPoints) || 1,
       }]);
     }
-  }, [inputMode, questions.length, defaultPoints]);
+  }, [activeTab, questions.length, defaultPoints, currentEditingExamId]);
 
   const resetExamForm = () => {
     setExamName('');
@@ -39,6 +40,7 @@ const ExamsPage = () => {
     setDefaultPoints(1);
     setQuestions([]);
     setCurrentEditingExamId(null);
+    setActiveTab('manual'); // Switch to manual tab for new exam creation
   };
 
   const handleSaveExam = async () => {
@@ -79,6 +81,7 @@ const ExamsPage = () => {
       }
       resetExamForm();
       setRefreshTrigger(prev => prev + 1);
+      setActiveTab('published'); // Go back to published list after saving
     } catch (error) {
       console.error("فشل حفظ/تحديث الامتحان:", error);
       showAlert('حدث خطأ أثناء حفظ الامتحان.');
@@ -98,6 +101,7 @@ const ExamsPage = () => {
           id: `q-loaded-${Date.now()}-${index}`
         })));
         setCurrentEditingExamId(examId);
+        setActiveTab('manual'); // Switch to manual tab for editing
         showAlert('تم تحميل الامتحان للتعديل.');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
@@ -110,51 +114,70 @@ const ExamsPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-8 max-w-3xl w-full flex-grow mb-20 overflow-y-auto">
-      <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">إنشاء امتحان</h1>
-      <InputModeSwitcher currentMode={inputMode} setMode={setInputMode} />
-      <ExamMetadata
-        examName={examName}
-        setExamName={setExamName}
-        examDuration={examDuration}
-        setExamDuration={setExamDuration}
-        defaultPoints={defaultPoints}
-        setDefaultPoints={setDefaultPoints}
-      />
-      {inputMode === 'manual' && (
-        <QuestionEditor
-          questions={questions}
-          setQuestions={setQuestions}
-          defaultPoints={defaultPoints}
-        />
-      )}
-      {inputMode === 'image' && (
-        <ImageUploader
-          onQuestionsExtracted={(extractedQuestions) => {
-            setQuestions(extractedQuestions);
-            setInputMode('manual');
-          }}
-          defaultPoints={defaultPoints}
-        />
-      )}
-      <hr className="my-8 border-gray-300" />
-      <div className="flex justify-center space-x-4 space-x-reverse">
-        <button
-          className="bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform active:scale-105"
-          onClick={handleSaveExam}
-        >
-          {currentEditingExamId ? 'تحديث الامتحان' : 'حفظ الامتحان'}
-        </button>
-        {currentEditingExamId && (
-          <button
-            className="bg-gray-500 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform active:scale-105"
-            onClick={resetExamForm}
-          >
-            امتحان جديد
-          </button>
-        )}
+    <div className="container mx-auto p-4 md:p-8 max-w-4xl w-full flex-grow mb-20 overflow-y-auto">
+      <div className="border-b border-gray-200 mb-6">
+        <nav className="-mb-px flex space-x-6 space-x-reverse justify-center">
+          <TabButton title="الامتحانات المنشورة" isActive={activeTab === 'published'} onClick={() => setActiveTab('published')} />
+          <TabButton title="إنشاء يدوي" isActive={activeTab === 'manual'} onClick={() => setActiveTab('manual')} />
+          <TabButton title="إنشاء بالصور" isActive={activeTab === 'image'} onClick={() => setActiveTab('image')} />
+        </nav>
       </div>
-      <PublishedExamsList onEditExam={loadExamForEditing} refreshTrigger={refreshTrigger} />
+
+      {(activeTab === 'manual' || activeTab === 'image') && (
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">
+            {currentEditingExamId ? 'تعديل الامتحان' : 'إنشاء امتحان جديد'}
+          </h1>
+          <ExamMetadata
+            examName={examName}
+            setExamName={setExamName}
+            examDuration={examDuration}
+            setExamDuration={setExamDuration}
+            defaultPoints={defaultPoints}
+            setDefaultPoints={setDefaultPoints}
+          />
+          {activeTab === 'manual' && (
+            <QuestionEditor
+              questions={questions}
+              setQuestions={setQuestions}
+              defaultPoints={defaultPoints}
+            />
+          )}
+          {activeTab === 'image' && (
+            <ImageUploader
+              onQuestionsExtracted={(extractedQuestions) => {
+                setQuestions(extractedQuestions);
+                setActiveTab('manual');
+              }}
+              defaultPoints={defaultPoints}
+            />
+          )}
+          <hr className="my-8 border-gray-300" />
+          <div className="flex justify-center space-x-4 space-x-reverse">
+            <button
+              className="bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform active:scale-105"
+              onClick={handleSaveExam}
+            >
+              {currentEditingExamId ? 'تحديث الامتحان' : 'حفظ الامتحان'}
+            </button>
+            {currentEditingExamId && (
+              <button
+                className="bg-gray-500 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform active:scale-105"
+                onClick={resetExamForm}
+              >
+                إلغاء التعديل
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'published' && (
+        <div>
+          <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">الامتحانات المنشورة</h1>
+          <PublishedExamsList onEditExam={loadExamForEditing} refreshTrigger={refreshTrigger} />
+        </div>
+      )}
     </div>
   );
 };

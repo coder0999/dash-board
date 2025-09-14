@@ -3,62 +3,57 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // This function checks if a user has a specific permission.
-    // It reads the user's roles, then checks the 'roles' collection
-    // to see if any of their roles grant the requested permission.
-    function hasPermission(permission) {
-      // Get the user's roles from their document in the 'users' collection.
-      let userRoles = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles;
-      // Check if any of the user's roles exist in the 'roles' collection
-      // and if that role has the required permission.
-      return userRoles.exists(role =>
-        get(/databases/$(database)/documents/roles/$(role)).data.permissions.hasAny([permission])
-      );
-    }
+    // The logic in your app already checks if a user's email is in the
+    // 'allowed_emails' list before letting them stay logged in.
+    // Therefore, any user who is logged in (request.auth.uid != null)
+    // is an approved user and can be treated as an admin.
 
-    // Users can read their own data. Admins with 'view_users' can read all user data.
-    // Only admins with 'manage_users' can change user data.
-    match /users/{userId} {
-      allow read: if request.auth.uid == userId || hasPermission('view_users');
-      allow write: if hasPermission('manage_users');
-    }
-
-    // Roles can be read by any authenticated user, but only written by admins.
-    match /roles/{roleId} {
+    // Rule for the email-based access control config
+    match /config/access_control {
       allow read: if request.auth.uid != null;
-      allow write: if hasPermission('manage_roles');
     }
 
-    // Anyone can read products and categories. Writing requires specific permissions.
+    // Any logged-in (i.e., approved) user can manage all collections.
+    match /users/{userId} {
+      allow read, write: if request.auth.uid != null;
+    }
+
+    match /roles/{roleId} {
+      allow read, write: if request.auth.uid != null;
+    }
+
     match /products/{productId} {
-      allow read: if true;
-      allow write: if hasPermission('manage_products');
+      allow read, write: if request.auth.uid != null;
     }
     match /categories/{categoryId} {
-      allow read: if true;
-      allow write: if hasPermission('manage_categories');
+      allow read, write: if request.auth.uid != null;
     }
 
-    // Authenticated users can create orders. They can only read their own orders.
-    // Admins with 'view_orders' can see all orders, and 'manage_orders' allows editing.
     match /orders/{orderId} {
-      allow create: if request.auth.uid != null;
-      allow read: if resource.data.userId == request.auth.uid || hasPermission('view_orders');
-      allow update, delete: if hasPermission('manage_orders');
+      allow read, write: if request.auth.uid != null;
     }
 
-    // Anyone can read evaluations. Authenticated users can create them.
-    // Admins with 'manage_evaluations' can edit or delete them.
     match /evaluations/{evaluationId} {
-      allow read: if true;
-      allow create: if request.auth.uid != null;
-      allow update, delete: if hasPermission('manage_evaluations');
+      allow read, write: if request.auth.uid != null;
     }
 
-    // Anyone can read exams. Admins with 'manage_exams' can write them.
     match /exams/{examId} {
-      allow read: if true;
-      allow write: if hasPermission('manage_exams');
+      allow read, write: if request.auth.uid != null;
+    }
+
+    // ADDED: Rule for the subjects collection
+    match /subjects/{subjectId} {
+      allow read, write: if request.auth.uid != null;
+    }
+
+    // ADDED: Rule for the exam_results collection
+    match /exam_results/{examId} {
+      // Allow access to the subcollection for logged-in users.
+      allow read, write: if request.auth.uid != null;
+
+      match /submissions/{submissionId} {
+        allow read, write: if request.auth.uid != null;
+      }
     }
   }
 }

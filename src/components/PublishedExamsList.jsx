@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import useAuth from '../hooks/useAuth';
@@ -76,6 +77,9 @@ const PublishedExamsList = ({ onEditExam, refreshTrigger }) => {
                 <button onClick={() => onEditExam(exam.id)} className="bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-600 transition-colors">
                   عرض/تعديل
                 </button>
+                <Link to={`/exams/${exam.id}/results`} className="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                  إحصائيات
+                </Link>
                 <button onClick={() => handleDelete(exam.id)} className="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">
                   حذف
                 </button>

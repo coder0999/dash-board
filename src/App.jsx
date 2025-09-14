@@ -8,6 +8,7 @@ import ExamsPage from './pages/ExamsPage';
 import EvaluationsPage from './pages/EvaluationsPage';
 import ProfilePage from './pages/ProfilePage';
 import StorePage from './pages/StorePage'; // Import the new page
+import ResultsPage from './pages/ResultsPage';
 import LoadingSpinner from './components/LoadingSpinner';
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
             <Route path="/evaluations" element={<EvaluationsPage />} />
             <Route path="/store" element={<StorePage />} />
             <Route path="/profile" element={<ProfilePage handleLogout={handleLogout} user={userData} />} />
+            <Route path="/exams/:examId/results" element={<ResultsPage />} />
           </Routes>
         </Layout>
       ) : (
