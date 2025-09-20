@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebase';
 import { collection, addDoc, getDocs } from 'firebase/firestore';
 import useAuth from '../hooks/useAuth'; // Import useAuth
@@ -11,8 +11,13 @@ const StorePage = () => {
   const [orders, setOrders] = useState([]);
   const { authUser } = useAuth(); // Get the authenticated user
 
-  // Fetch data from Firebase
-  const fetchData = async () => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    if (!authUser) {
+      setIsLoading(false);
+      return;
+    }
     // Fetch Products
     const productsCollection = collection(db, 'products');
     const productSnapshot = await getDocs(productsCollection);
@@ -24,11 +29,12 @@ const StorePage = () => {
     const orderSnapshot = await getDocs(ordersCollection);
     const orderList = orderSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setOrders(orderList);
-  };
+    setIsLoading(false);
+  }, [authUser]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleAddProduct = async () => {
     if (!authUser) {
@@ -57,6 +63,14 @@ const StorePage = () => {
       alert('Failed to add product.');
     }
   };
+
+  if (isLoading) {
+    return <div className="p-4 text-center">Loading...</div>;
+  }
+
+  if (!authUser) {
+    return <div className="p-4 text-center">Please log in to see the store.</div>;
+  }
 
   return (
     <div className="p-4 mb-16">

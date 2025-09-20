@@ -12,6 +12,18 @@ const PublishedExamsList = ({ onEditExam, refreshTrigger }) => {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [examToDelete, setExamToDelete] = useState(null);
+  const [copiedExamId, setCopiedExamId] = useState(null);
+
+  const handleCopyLink = (examId) => {
+    const link = `https://coder0999.github.io/basic/#/exam/${examId}`;
+    navigator.clipboard.writeText(link).then(() => {
+        setCopiedExamId(examId);
+        setTimeout(() => setCopiedExamId(null), 2000); // Reset after 2 seconds
+    }, (err) => {
+        console.error('Could not copy text: ', err);
+        showAlert('فشل نسخ الرابط.');
+    });
+  };
 
   const fetchExams = useCallback(async () => {
     if (!user) return;
@@ -76,6 +88,9 @@ const PublishedExamsList = ({ onEditExam, refreshTrigger }) => {
               <div className="flex space-x-2 space-x-reverse">
                 <button onClick={() => onEditExam(exam.id)} className="bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-600 transition-colors">
                   عرض/تعديل
+                </button>
+                <button onClick={() => handleCopyLink(exam.id)} className="bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition-colors">
+                  {copiedExamId === exam.id ? 'تم النسخ!' : 'نسخ الرابط'}
                 </button>
                 <Link to={`/exams/${exam.id}/results`} className="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
                   إحصائيات
