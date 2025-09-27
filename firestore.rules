@@ -38,7 +38,8 @@ service cloud.firestore {
     }
 
     match /exams/{examId} {
-      allow read, write: if request.auth.uid != null;
+      allow read: if true;
+      allow write: if request.auth.uid != null;
     }
 
     // ADDED: Rule for the subjects collection

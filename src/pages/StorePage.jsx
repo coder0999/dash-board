@@ -1,14 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, getDocs } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import useAuth from '../hooks/useAuth'; // Import useAuth
+import EditIcon from '../components/icons/EditIcon';
+import TrashIcon from '../components/icons/TrashIcon';
 
 const StorePage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState('');
+  const [productQuantity, setProductQuantity] = useState('');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [newQuantity, setNewQuantity] = useState('');
+  const [newPrice, setNewPrice] = useState('');
   const { authUser } = useAuth(); // Get the authenticated user
 
   const [isLoading, setIsLoading] = useState(true);
@@ -42,7 +49,7 @@ const StorePage = () => {
       return;
     }
 
-    if (!productName || !productPrice) {
+    if (!productName || !productPrice || !productQuantity) {
       alert('Please fill out all fields');
       return;
     }
@@ -51,16 +58,58 @@ const StorePage = () => {
       await addDoc(productsCollection, {
         name: productName,
         price: Number(productPrice),
+        quantity: Number(productQuantity),
         createdBy: authUser.uid, // Add user's UID
       });
       // Close modal, reset fields, and refresh data
       setIsModalOpen(false);
       setProductName('');
       setProductPrice('');
+      setProductQuantity('');
       fetchData(); // Refresh both products and orders
     } catch (error) {
       console.error("Error adding document: ", error);
       alert('Failed to add product.');
+    }
+  };
+
+  const handleOpenEditModal = (product) => {
+    setEditingProduct(product);
+    setNewQuantity(product.quantity);
+    setNewPrice(product.price);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateProduct = async () => {
+    if (!editingProduct || newQuantity === '' || newPrice === '') {
+      return;
+    }
+    try {
+      const productRef = doc(db, 'products', editingProduct.id);
+      await updateDoc(productRef, {
+        quantity: Number(newQuantity),
+        price: Number(newPrice),
+      });
+      setIsEditModalOpen(false);
+      setEditingProduct(null);
+      setNewQuantity('');
+      setNewPrice('');
+      fetchData();
+    } catch (error) {
+      console.error("Error updating document: ", error);
+      alert('Failed to update product.');
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    if (window.confirm('هل أنت متأكد أنك تريد حذف هذا المنتج؟')) {
+      try {
+        await deleteDoc(doc(db, 'products', productId));
+        fetchData();
+      } catch (error) {
+        console.error("Error deleting document: ", error);
+        alert('Failed to delete product.');
+      }
     }
   };
 
@@ -81,8 +130,19 @@ const StorePage = () => {
       <div className="space-y-3 mb-8">
         {products.length > 0 ? products.map(product => (
           <div key={product.id} className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
-            <span className="font-semibold">{product.name}</span>
-            <span className="text-gray-600">{product.price} نقاط</span>
+            <div className="flex items-center">
+              <span className="font-semibold">{product.name}</span>
+              <span className="text-gray-600 mx-4">{product.price} نقاط</span>
+              <span className="text-gray-600">الكمية: {product.quantity}</span>
+            </div>
+            <div className="flex items-center">
+              <button onClick={() => handleOpenEditModal(product)} className="p-2">
+                <EditIcon className="w-6 h-6 text-gray-600" />
+              </button>
+              <button onClick={() => handleDeleteProduct(product.id)} className="p-2 ml-2">
+                <TrashIcon className="w-6 h-6" />
+              </button>
+            </div>
           </div>
         )) : <p>لا توجد منتجات. أضف منتجًا جديدًا.</p>}
       </div>
@@ -127,24 +187,80 @@ const StorePage = () => {
           <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm">
             <h2 className="text-xl font-bold mb-4">إضافة منتج جديد</h2>
             <div className="space-y-4">
-              <input 
-                type="text"
-                placeholder="اسم المنتج"
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                className="w-full p-2 border rounded"
-              />
-              <input 
-                type="number"
-                placeholder="السعر"
-                value={productPrice}
-                onChange={(e) => setProductPrice(e.target.value)}
-                className="w-full p-2 border rounded"
-              />
+              <div>
+                <label htmlFor="productName" className="block text-sm font-medium text-gray-700">اسم المنتج</label>
+                <input 
+                  type="text"
+                  id="productName"
+                  placeholder="اسم المنتج"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  className="w-full p-2 border rounded mt-1"
+                />
+              </div>
+              <div>
+                <label htmlFor="productPrice" className="block text-sm font-medium text-gray-700">السعر</label>
+                <input 
+                  type="number"
+                  id="productPrice"
+                  placeholder="السعر"
+                  value={productPrice}
+                  onChange={(e) => setProductPrice(e.target.value)}
+                  className="w-full p-2 border rounded mt-1"
+                />
+              </div>
+              <div>
+                <label htmlFor="productQuantity" className="block text-sm font-medium text-gray-700">الكمية</label>
+                <input 
+                  type="number"
+                  id="productQuantity"
+                  placeholder="الكمية"
+                  value={productQuantity}
+                  onChange={(e) => setProductQuantity(e.target.value)}
+                  className="w-full p-2 border rounded mt-1"
+                />
+              </div>
             </div>
             <div className="mt-6 flex justify-end space-x-4">
               <button onClick={() => setIsModalOpen(false)} className="bg-gray-300 text-gray-800 px-4 py-2 rounded">إلغاء</button>
               <button onClick={handleAddProduct} className="bg-blue-600 text-white px-4 py-2 rounded">نشر</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Product Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm">
+            <h2 className="text-xl font-bold mb-4">تعديل المنتج</h2>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">الكمية</label>
+                <input 
+                  type="number"
+                  id="quantity"
+                  placeholder="الكمية الجديدة"
+                  value={newQuantity}
+                  onChange={(e) => setNewQuantity(e.target.value)}
+                  className="w-full p-2 border rounded mt-1"
+                />
+              </div>
+              <div>
+                <label htmlFor="price" className="block text-sm font-medium text-gray-700">السعر</label>
+                <input 
+                  type="number"
+                  id="price"
+                  placeholder="السعر الجديد"
+                  value={newPrice}
+                  onChange={(e) => setNewPrice(e.target.value)}
+                  className="w-full p-2 border rounded mt-1"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-4">
+              <button onClick={() => setIsEditModalOpen(false)} className="bg-gray-300 text-gray-800 px-4 py-2 rounded">إلغاء</button>
+              <button onClick={handleUpdateProduct} className="bg-blue-600 text-white px-4 py-2 rounded">تحديث</button>
             </div>
           </div>
         </div>
