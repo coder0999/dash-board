@@ -85,3 +85,60 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
     -moz-appearance: textfield;
 }
+
+/* --- Login Page Geometric Background --- */
+.login-geometric-background {
+  background-color: #f0f8ff; /* AliceBlue, a very light base */
+  position: relative;
+  overflow: hidden;
+}
+
+.shape-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.shape {
+  position: absolute;
+  border-radius: 3rem; /* Softer corners */
+  opacity: 0.6;
+}
+
+.shape1 {
+  width: 400px;
+  height: 400px;
+  background-color: #7dd3fc; /* sky-300 */
+  top: -100px;
+  left: -150px;
+  transform: rotate(45deg);
+}
+
+.shape2 {
+  width: 350px;
+  height: 350px;
+  background-color: #38bdf8; /* sky-400 */
+  bottom: -150px;
+  right: -100px;
+  transform: rotate(60deg);
+}
+
+.shape3 {
+  width: 250px;
+  height: 250px;
+  background-color: #0ea5e9; /* sky-500 */
+  bottom: 150px;
+  right: 50px;
+  } 
+
+/* --- Floating Icons for Login Page --- */
+.floating-icon {
+  position: absolute;
+  color: rgba(2, 132, 199, 0.2); /* Faint version of sky-600, more visible */
+  z-index: 0;
+  transition: transform 0.3s ease-out;
+}
+

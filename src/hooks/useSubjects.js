@@ -5,14 +5,21 @@ import useAuth from './useAuth';
 import { useUI } from '../context/UIContext';
 
 const useSubjects = () => {
-  const { authUser: user } = useAuth();
+  const { authUser: user, userData } = useAuth();
   const { showAlert } = useUI();
   const [subjects, setSubjects] = useState([]);
 
   const fetchSubjects = useCallback(async () => {
-    if (!user) return;
+    if (!user || !userData) return;
     try {
-      const q = query(collection(db, 'subjects'), where("creatorId", "==", user.uid));
+      let q;
+      if (userData.role === 'admin') {
+        // Admin sees all subjects
+        q = query(collection(db, 'subjects'));
+      } else {
+        // Regular user sees only their own subjects
+        q = query(collection(db, 'subjects'), where("creatorId", "==", user.uid));
+      }
       const querySnapshot = await getDocs(q);
       const subjectsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setSubjects(subjectsData);
@@ -20,7 +27,7 @@ const useSubjects = () => {
       console.error("Error fetching subjects: ", error);
       showAlert('حدث خطأ أثناء تحميل المواد.');
     }
-  }, [user, showAlert]);
+  }, [user, userData, showAlert]);
 
   const addSubject = async (subjectData) => {
     if (!user) {

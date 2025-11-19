@@ -23,18 +23,21 @@ const EditIcon = ({ className }) => (
 );
 
 const StatisticsIcon = ({ className }) => (
-  <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 122.88 68.04" style={{ enableBackground: 'new 0 0 122.88 68.04' }} xmlSpace="preserve" className={className}>
-    <g>
-      <path d="M2.03,56.52c-2.66,2.58-2.72,6.83-0.13,9.49c2.58,2.66,6.83,2.72,9.49,0.13l27.65-26.98l23.12,22.31 c2.67,2.57,6.92,2.49,9.49-0.18l37.77-38.22v19.27c0,3.72,3.01,6.73,6.73,6.73s6.73-3.01,6.73-6.73V6.71h-0.02 c0-1.74-0.67-3.47-2-4.78c-1.41-1.39-3.29-2.03-5.13-1.91H82.4c-3.72,0-6.73,3.01-6.73,6.73c0,3.72,3.01,6.73,6.73,6.73h17.63 L66.7,47.2L43.67,24.97c-2.6-2.5-6.73-2.51-9.33,0.03L2.03,56.52L2.03,56.52z" />
-    </g>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M2,21H22V19H2V21M5,17H8V10H5V17M10.5,17H13.5V7H10.5V17M16,17H19V13H16V17Z" />
   </svg>
 );
 
 const TrashIcon = ({ className }) => (
-  <svg className={`svg-icon ${className}`} style={{ width: '1em', height: '1em', verticalAlign: 'middle', fill: 'currentColor', overflow: 'hidden' }} viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
-    <path d="M844.8 326.4c-19.2 0-38.4 19.2-38.4 38.4v550.4c0 19.2-19.2 38.4-38.4 38.4H256c-19.2 0-38.4-19.2-38.4-38.4V364.8c0-19.2-12.8-38.4-38.4-38.4-19.2 0-38.4 19.2-38.4 38.4v550.4c6.4 57.6 51.2 108.8 115.2 108.8h512c64 0 115.2-51.2 115.2-115.2V364.8c0-19.2-19.2-38.4-38.4-38.4z m-409.6 435.2V364.8c0-19.2-12.8-38.4-38.4-38.4-19.2 0-38.4 19.2-38.4 38.4V768c0 19.2 12.8 38.4 38.4 38.4 25.6-6.4 38.4-19.2 38.4-44.8z m224 0V364.8c0-19.2-19.2-38.4-38.4-38.4s-38.4 19.2-38.4 38.4V768c0 19.2 19.2 38.4 38.4 38.4 19.2-6.4 38.4-19.2 38.4-44.8z m326.4-582.4h-179.2V108.8c0-57.6-51.2-108.8-108.8-108.8H326.4c-64 0-108.8 44.8-108.8 108.8v76.8H38.4c-19.2-6.4-38.4 12.8-38.4 32s19.2 32 38.4 32h947.2c19.2 0 38.4-12.8 38.4-32s-19.2-38.4-38.4-38.4z m-256 0H288V108.8c0-19.2 19.2-38.4 38.4-38.4h371.2c19.2 0 32 12.8 32 38.4v70.4z m0 0" fill="#FF0000" />
-  </svg>
-);
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="currentColor" className={className}>
+      <path d="M844.8 326.4c-19.2 0-38.4 19.2-38.4 38.4v550.4c0 19.2-19.2 38.4-38.4 38.4H256c-19.2 0-38.4-19.2-38.4-38.4V364.8c0-19.2-12.8-38.4-38.4-38.4-19.2 0-38.4 19.2-38.4 38.4v550.4c6.4 57.6 51.2 108.8 115.2 108.8h512c64 0 115.2-51.2 115.2-115.2V364.8c0-19.2-19.2-38.4-38.4-38.4z m-409.6 435.2V364.8c0-19.2-12.8-38.4-38.4-38.4-19.2 0-38.4 19.2-38.4 38.4V768c0 19.2 12.8 38.4 38.4 38.4 25.6-6.4 38.4-19.2 38.4-44.8z m224 0V364.8c0-19.2-19.2-38.4-38.4-38.4s-38.4 19.2-38.4 38.4V768c0 19.2 19.2 38.4 38.4 38.4 19.2-6.4 38.4-19.2 38.4-44.8z m326.4-582.4h-179.2V108.8c0-57.6-51.2-108.8-108.8-108.8H326.4c-64 0-108.8 44.8-108.8 108.8v76.8H38.4c-19.2-6.4-38.4 12.8-38.4 32s19.2 32 38.4 32h947.2c19.2 0 38.4-12.8 38.4-32s-19.2-38.4-38.4-38.4z m-256 0H288V108.8c0-19.2 19.2-38.4 38.4-38.4h371.2c19.2 0 32 12.8 32 38.4v70.4z m0 0" />
+    </svg>
+  );
 
 const PublishedExamsList = ({ onEditExam, refreshTrigger }) => {
   const { authUser: user } = useAuth();
@@ -59,7 +62,8 @@ const PublishedExamsList = ({ onEditExam, refreshTrigger }) => {
     if (!user) return;
     setLoading(true);
     try {
-      const q = query(collection(db, 'exams'), where("creatorId", "==", user.uid));
+      // All logged-in users should see all exams.
+      const q = query(collection(db, 'exams'));
       const querySnapshot = await getDocs(q);
       const examsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setExams(examsData);
@@ -115,21 +119,21 @@ const PublishedExamsList = ({ onEditExam, refreshTrigger }) => {
                 <h3 className="text-xl font-bold text-gray-800">{exam.name}</h3>
                 <p className="text-gray-600">المدة: {exam.duration} دقيقة | عدد الأسئلة: {exam.questions.length}</p>
               </div>
-              <div className="flex space-x-4 space-x-reverse">
-                <button onClick={() => onEditExam(exam.id)} className="flex flex-col items-center text-gray-600 hover:text-indigo-600 transition-colors">
-                  <EditIcon className="w-8 h-8" />
+              <div className="flex items-center space-x-4 space-x-reverse">
+                <button onClick={() => onEditExam(exam.id)} className="flex flex-col items-center text-gray-500 hover:text-indigo-600 transition-colors">
+                  <EditIcon className="w-6 h-6" />
                   <span className="text-sm font-medium">تعديل</span>
                 </button>
-                <button onClick={() => handleCopyLink(exam.id)} className="flex flex-col items-center text-gray-600 hover:text-green-600 transition-colors">
-                  <CopyIcon className="w-8 h-8" />
+                <button onClick={() => handleCopyLink(exam.id)} className="flex flex-col items-center text-gray-500 hover:text-green-600 transition-colors">
+                  <CopyIcon className="w-6 h-6" />
                   <span className="text-sm font-medium">{copiedExamId === exam.id ? 'تم النسخ!' : 'نسخ'}</span>
                 </button>
-                <Link to={`/exams/${exam.id}/results`} className="flex flex-col items-center text-gray-600 hover:text-blue-600 transition-colors">
-                  <StatisticsIcon className="w-8 h-8" />
+                <Link to={`/exams/${exam.id}/results`} className="flex flex-col items-center text-gray-500 hover:text-blue-600 transition-colors">
+                  <StatisticsIcon className="w-6 h-6" />
                   <span className="text-sm font-medium">إحصائيات</span>
                 </Link>
-                <button onClick={() => handleDelete(exam.id)} className="flex flex-col items-center text-gray-600 hover:text-red-600 transition-colors">
-                  <TrashIcon className="w-8 h-8" />
+                <button onClick={() => handleDelete(exam.id)} className="flex flex-col items-center text-red-500 hover:text-red-700 transition-colors">
+                  <TrashIcon className="w-6 h-6" />
                   <span className="text-sm font-medium">حذف</span>
                 </button>
               </div>
