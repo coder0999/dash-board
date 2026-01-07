@@ -63,7 +63,7 @@ const QuestionCard = ({ questionData, index, onUpdate, onRemove }) => {
         ></textarea>
       </div>
       <div className="space-y-3">
-        {questionData.options.map((option, optIndex) => {
+        {Array.isArray(questionData.options) ? questionData.options.map((option, optIndex) => {
           const isChecked = optIndex === questionData.correctAnswer;
           const bgColor = isChecked ? 'bg-green-100' : 'bg-gray-50';
           return (
@@ -85,7 +85,7 @@ const QuestionCard = ({ questionData, index, onUpdate, onRemove }) => {
               />
             </div>
           );
-        })}
+        }) : <p className="text-red-500">لا توجد خيارات لهذا السؤال.</p>}
       </div>
     </div>
   );

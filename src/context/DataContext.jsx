@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, orderBy, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import useAuth from '../hooks/useAuth';
 
@@ -23,7 +23,7 @@ export const DataProvider = ({ children }) => {
 
     const subjectQuery = query(collection(db, 'subjects'), where("creatorId", "==", authUser.uid));
     const productsQuery = query(collection(db, 'products'));
-    const ordersQuery = query(collection(db, 'orders'));
+    const ordersQuery = query(collection(db, 'orders'), orderBy("createdAt", "asc"));
     const examsQuery = query(collection(db, 'exams'), where("creatorId", "==", authUser.uid));
 
     const unsubSubjects = onSnapshot(subjectQuery, snapshot => {
@@ -96,6 +96,26 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+  const deleteProduct = async (productId) => {
+    if (!authUser) return;
+    try {
+      await deleteDoc(doc(db, 'products', productId));
+    } catch (error) {
+      console.error("Error deleting product: ", error);
+      throw error;
+    }
+  }
+
+  const updateProduct = async (productId, productData) => {
+    if (!authUser) return;
+    try {
+      await updateDoc(doc(db, 'products', productId), productData);
+    } catch (error) {
+      console.error("Error updating product: ", error);
+      throw error;
+    }
+  }
+
   const deleteExam = async (examId) => {
     if (!authUser) return;
     try {
@@ -106,7 +126,17 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  const value = { subjects, products, orders, exams, loading, addSubject, deleteSubject, addProduct, deleteExam };
+  const deleteOrder = async (orderId) => {
+    if (!authUser) return;
+    try {
+      await deleteDoc(doc(db, 'orders', orderId));
+    } catch (error) {
+      console.error("Error deleting order: ", error);
+      throw error;
+    }
+  }
+
+  const value = { subjects, products, orders, exams, loading, addSubject, deleteSubject, addProduct, deleteExam, deleteOrder, updateProduct, deleteProduct };
 
   return (
     <DataContext.Provider value={value}>

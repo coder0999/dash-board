@@ -1,72 +1,36 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { db } from '../firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import React, { useState } from 'react';
+import { useData } from '../context/DataContext';
 import useAuth from '../hooks/useAuth'; // Import useAuth
 import EditIcon from '../components/icons/EditIcon';
 import TrashIcon from '../components/icons/TrashIcon';
 
 const StorePage = () => {
+  const { products, orders, deleteOrder, addProduct, updateProduct, deleteProduct } = useData();
+  const { authUser } = useAuth(); // Get the authenticated user
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState('');
   const [productQuantity, setProductQuantity] = useState('');
-  const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [newQuantity, setNewQuantity] = useState('');
   const [newPrice, setNewPrice] = useState('');
-  const { authUser } = useAuth(); // Get the authenticated user
-
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    if (!authUser) {
-      setIsLoading(false);
-      return;
-    }
-    // Fetch Products
-    const productsCollection = collection(db, 'products');
-    const productSnapshot = await getDocs(productsCollection);
-    const productList = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setProducts(productList);
-
-    // Fetch Orders
-    const ordersCollection = collection(db, 'orders');
-    const orderSnapshot = await getDocs(ordersCollection);
-    const orderList = orderSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setOrders(orderList);
-    setIsLoading(false);
-  }, [authUser]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   const handleAddProduct = async () => {
-    if (!authUser) {
-      alert('يجب تسجيل الدخول لإضافة منتج.');
-      return;
-    }
-
     if (!productName || !productPrice || !productQuantity) {
       alert('Please fill out all fields');
       return;
     }
     try {
-      const productsCollection = collection(db, 'products');
-      await addDoc(productsCollection, {
+      await addProduct({
         name: productName,
         price: Number(productPrice),
         quantity: Number(productQuantity),
-        createdBy: authUser.uid, // Add user's UID
       });
-      // Close modal, reset fields, and refresh data
       setIsModalOpen(false);
       setProductName('');
       setProductPrice('');
       setProductQuantity('');
-      fetchData(); // Refresh both products and orders
     } catch (error) {
       console.error("Error adding document: ", error);
       alert('Failed to add product.');
@@ -85,8 +49,7 @@ const StorePage = () => {
       return;
     }
     try {
-      const productRef = doc(db, 'products', editingProduct.id);
-      await updateDoc(productRef, {
+      await updateProduct(editingProduct.id, {
         quantity: Number(newQuantity),
         price: Number(newPrice),
       });
@@ -94,7 +57,6 @@ const StorePage = () => {
       setEditingProduct(null);
       setNewQuantity('');
       setNewPrice('');
-      fetchData();
     } catch (error) {
       console.error("Error updating document: ", error);
       alert('Failed to update product.');
@@ -104,8 +66,7 @@ const StorePage = () => {
   const handleDeleteProduct = async (productId) => {
     if (window.confirm('هل أنت متأكد أنك تريد حذف هذا المنتج؟')) {
       try {
-        await deleteDoc(doc(db, 'products', productId));
-        fetchData();
+        await deleteProduct(productId);
       } catch (error) {
         console.error("Error deleting document: ", error);
         alert('Failed to delete product.');
@@ -113,9 +74,16 @@ const StorePage = () => {
     }
   };
 
-  if (isLoading) {
-    return <div className="p-4 text-center">Loading...</div>;
-  }
+  const handleDeleteOrder = async (orderId) => {
+    if (window.confirm('هل أنت متأكد أنك تريد حذف هذا الطلب؟')) {
+      try {
+        await deleteOrder(orderId);
+      } catch (error) {
+        console.error("Error deleting document: ", error);
+        alert('Failed to delete order.');
+      }
+    }
+  };
 
   if (!authUser) {
     return <div className="p-4 text-center">Please log in to see the store.</div>;
@@ -155,7 +123,12 @@ const StorePage = () => {
         {orders.length > 0 ? (
           orders.map(order => (
             <div key={order.id} className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-              <h3 className="text-lg font-bold text-blue-600">{order.productName}</h3>
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-bold text-blue-600">{order.productName}</h3>
+                <button onClick={() => handleDeleteOrder(order.id)} className="p-2 ml-2">
+                  <TrashIcon className="w-6 h-6" />
+                </button>
+              </div>
               <p className="text-gray-700">السعر: {order.productPrice} نقاط</p>
               <hr className="my-2" />
               <p className="text-gray-700"><strong>بيانات المستخدم:</strong></p>

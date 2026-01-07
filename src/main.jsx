@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import './index.css'
 import { UIProvider } from './context/UIContext.jsx'
+import { DataProvider } from './context/DataContext.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,8 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     <React.StrictMode>
       <BrowserRouter basename="/dash-board">
         <UIProvider>
-          <ScrollToTop />
-          <App />
+          <DataProvider>
+            <ScrollToTop />
+            <App />
+          </DataProvider>
         </UIProvider>
       </BrowserRouter>
     </React.StrictMode>,

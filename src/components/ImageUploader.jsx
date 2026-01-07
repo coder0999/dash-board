@@ -29,106 +29,143 @@ const ImageUploader = ({ onQuestionsExtracted, defaultPoints }) => {
     setUploadedImages(prev => prev.filter(img => img.id !== id));
   };
 
+  const processSingleImage = async (base64Image) => {
+    const textPrompt = `
+        استخرج الأسئلة والخيارات من هذه الصور بالترتيب.
+        الأهم من ذلك، بعد تحليل كل سؤال وخياراته، حدد الإجابة الصحيحة.
+        يجب أن يكون الناتج مصفوفة من الكائنات، كل كائن يمثل سؤالاً. 
+        يجب أن يحتوي كل كائن على الحقول التالية:
+        - "text": نص السؤال.
+        - "options": مصفوفة من الخيارات النصية.
+        - "correctAnswer": فهرس الإجابة الصحيحة ضمن مصفوفة الخيارات (يبدأ من 0).
+        فكر بعناية لتحديد الإجابة الصحيحة لكل سؤال.
+    `;
+
+    const imagePart = {
+      inlineData: {
+        mimeType: 'image/png',
+        data: base64Image
+      }
+    };
+
+    const parts = [
+      { text: textPrompt },
+      imagePart
+    ];
+
+    const payload = {
+      contents: [{
+        role: "user",
+        parts: parts
+      }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              "text": { "type": "STRING" },
+              "options": {
+                "type": "ARRAY",
+                "items": { "type": "STRING" }
+              },
+              "correctAnswer": { "type": "INTEGER" }
+            }
+          }
+        }
+      }
+    };
+
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded');
+      }
+      throw new Error(`API error: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+
+    if (result && result.candidates && result.candidates.length > 0 &&
+      result.candidates[0].content && result.candidates[0].content.parts &&
+      result.candidates[0].content.parts.length > 0) {
+
+      const jsonText = result.candidates[0].content.parts[0].text;
+      return JSON.parse(jsonText);
+    } else {
+      throw new Error('Failed to extract questions from image.');
+    }
+  };
+
   const processImages = async () => {
     if (uploadedImages.length === 0) {
       showAlert('الرجاء رفع صورة واحدة على الأقل.');
       return;
     }
 
+    alert(`بدأ تحليل ${uploadedImages.length} صورة. قد تستغرق هذه العملية بعض الوقت.`);
     showLoading();
+    let allQuestions = [];
 
     try {
-      const base64Images = await Promise.all(uploadedImages.map(item => imageToBase64(item.file)));
-      
-      const textPrompt = `
-          استخرج الأسئلة والخيارات من هذه الصور بالترتيب.
-          الأهم من ذلك، بعد تحليل كل سؤال وخياراته، حدد الإجابة الصحيحة.
+      for (let i = 0; i < uploadedImages.length; i++) {
+        alert(`Entering loop for image ${i + 1}`);
+        const image = uploadedImages[i];
+        showAlert(`جاري تحليل الصورة ${i + 1} من ${uploadedImages.length}...`);
+        const base64Image = await imageToBase64(image.file);
+        const parsedQuestions = await processSingleImageWithRetry(base64Image);
 
-          يجب أن يكون الناتج مصفوفة من الكائنات، كل كائن يمثل سؤالاً. 
-          يجب أن يحتوي كل كائن على الحقول التالية:
-          - "text": نص السؤال.
-          - "options": مصفوفة من الخيارات النصية.
-          - "correctAnswer": فهرس الإجابة الصحيحة ضمن مصفوفة الخيارات (يبدأ من 0).
-          
-          فكر بعناية لتحديد الإجابة الصحيحة لكل سؤال.
-      `;
+        if (!Array.isArray(parsedQuestions)) {
+          showAlert('فشل تحليل الأسئلة من الصورة. استجابة غير متوقعة من الـ API.');
+          continue; // Skip to the next image
+        }
 
-      const imageParts = base64Images.map(data => ({
-          inlineData: {
-              mimeType: 'image/png', 
-              data: data
-          }
-      }));
+        const newQuestions = parsedQuestions.map((q, index) => ({
+          id: `q-image-${Date.now()}-${i}-${index}`,
+          text: q.text,
+          type: 'multiple-choice',
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+          points: parseFloat(defaultPoints) || 1,
+        }));
+        allQuestions = [...allQuestions, ...newQuestions];
+        showAlert(`تم تحليل الصورة ${i + 1} بنجاح. ${uploadedImages.length - (i + 1)} متبقي.`);
 
-      const parts = [
-          { text: textPrompt },
-          ...imageParts 
-      ];
-
-      const payload = {
-          contents: [{
-              role: "user",
-              parts: parts
-          }],
-          generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                  type: "ARRAY",
-                  items: {
-                      type: "OBJECT",
-                      properties: {
-                          "text": { "type": "STRING" },
-                          "options": {
-                              "type": "ARRAY",
-                              "items": { "type": "STRING" }
-                          },
-                          "correctAnswer": { "type": "INTEGER" }
-                      }
-                  }
-              }
-          }
-      };
-
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
-      const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
+        // Add a delay between each request to avoid hitting the rate limit
+        if (i < uploadedImages.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
       }
 
-      const result = await response.json();
-      
-      if (result && result.candidates && result.candidates.length > 0 &&
-          result.candidates[0].content && result.candidates[0].content.parts &&
-          result.candidates[0].content.parts.length > 0) {
-          
-          const jsonText = result.candidates[0].content.parts[0].text;
-          const parsedQuestions = JSON.parse(jsonText);
-          
-          const newQuestions = parsedQuestions.map((q, index) => ({
-              id: `q-image-${Date.now()}-${index}`,
-              text: q.text,
-              type: 'multiple-choice',
-              options: q.options,
-              correctAnswer: q.correctAnswer,
-              points: parseFloat(defaultPoints) || 1,
-          }));
-
-          onQuestionsExtracted(newQuestions);
-          showAlert('تم استخراج الأسئلة بنجاح! يمكنك الآن مراجعتها وحفظها.');
-      } else {
-          showAlert('فشل استخراج الأسئلة. الرجاء المحاولة مرة أخرى.');
-      }
+      onQuestionsExtracted(allQuestions);
+      showAlert('تم استخراج الأسئلة بنجاح! يمكنك الآن مراجعتها وحفظها.');
 
     } catch (error) {
       console.error("Image processing failed:", error);
       showAlert('حدث خطأ أثناء تحليل الصور. الرجاء التأكد من أن الصور تحتوي على أسئلة واضحة.');
     } finally {
       hideLoading();
+    }
+  };
+
+  const processSingleImageWithRetry = async (base64Image, retries = 5, delay = 2000) => {
+    try {
+      return await processSingleImage(base64Image);
+    } catch (error) {
+      if (error.message === 'Rate limit exceeded' && retries > 0) {
+        showAlert(`تم تجاوز حد المعدل. إعادة المحاولة خلال ${delay / 1000} ثانية...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return await processSingleImageWithRetry(base64Image, retries - 1, delay * 2);
+      } else {
+        throw error;
+      }
     }
   };
 

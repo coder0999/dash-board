@@ -17,4 +17,4 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 export { db, auth };
-export const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+export const GEMINI_API_KEY = "AIzaSyAyAjO8Eejvyjg9fxuIOKpwcCpJBX7j6ro";
