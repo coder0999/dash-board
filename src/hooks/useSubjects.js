@@ -9,15 +9,16 @@ const useSubjects = () => {
   const { showAlert } = useUI();
   const [subjects, setSubjects] = useState([]);
 
+  const CLOUDINARY_CLOUD_NAME = "dvh42xxbd";
+  const CLOUDINARY_UPLOAD_PRESET = "PDFs652";
+
   const fetchSubjects = useCallback(async () => {
     if (!user || !userData) return;
     try {
       let q;
       if (userData.role === 'admin') {
-        // Admin sees all subjects
         q = query(collection(db, 'subjects'));
       } else {
-        // Regular user sees only their own subjects
         q = query(collection(db, 'subjects'), where("creatorId", "==", user.uid));
       }
       const querySnapshot = await getDocs(q);
@@ -29,24 +30,54 @@ const useSubjects = () => {
     }
   }, [user, userData, showAlert]);
 
-  const addSubject = async (subjectData) => {
+  const addSubject = async ({ name, file }) => {
     if (!user) {
-      showAlert('يجب عليك تسجيل الدخول لإضافة مادة.');
+      showAlert('يجب عليك تسجيل الدخول لإضافة تقييم.');
       return;
     }
+    if (!file) {
+      showAlert('الرجاء اختيار ملف للتحميل.');
+      return;
+    }
+
+    showAlert('بدأ التحميل...', 'info');
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
     try {
-      const data = {
-        ...subjectData,
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Cloudinary upload failed');
+      }
+
+      const data = await response.json();
+      const originalUrl = data.secure_url;
+      // Insert fl_attachment to force download
+      const downloadURL = originalUrl.replace('/upload/', '/upload/fl_attachment/');
+
+      showAlert('اكتمل تحميل الملف. الآن يتم الحفظ...', 'success');
+
+      const firestoreData = {
+        name: name,
+        link: downloadURL,
         creatorId: user.uid,
         createdAt: new Date().toISOString(),
+        fileName: file.name
       };
-      const subjectCollectionRef = collection(db, 'subjects');
-      await addDoc(subjectCollectionRef, data);
-      showAlert('تم إضافة المادة بنجاح.');
-      fetchSubjects(); // Refresh the list
+
+      await addDoc(collection(db, 'subjects'), firestoreData);
+      showAlert('تم إضافة التقييم بنجاح.', 'success');
+      fetchSubjects();
+
     } catch (error) {
-      console.error("Error adding subject: ", error);
-      showAlert('حدث خطأ أثناء إضافة المادة.');
+      console.error("Upload error: ", error);
+      showAlert(`حدث خطأ أثناء الرفع: ${error.message}`, 'error');
     }
   };
 
@@ -56,7 +87,8 @@ const useSubjects = () => {
       await deleteDoc(subjectDocRef);
       showAlert('تم حذف المادة بنجاح.');
       fetchSubjects(); // Refresh the list
-    } catch (error) {
+    } catch (error)
+      {
       console.error("Error deleting subject: ", error);
       showAlert('حدث خطأ أثناء حذف المادة.');
     }

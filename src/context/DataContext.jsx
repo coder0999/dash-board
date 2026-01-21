@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, orderBy, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, orderBy, updateDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
 import useAuth from '../hooks/useAuth';
 
@@ -134,9 +134,57 @@ export const DataProvider = ({ children }) => {
       console.error("Error deleting order: ", error);
       throw error;
     }
-  }
+  };
 
-  const value = { subjects, products, orders, exams, loading, addSubject, deleteSubject, addProduct, deleteExam, deleteOrder, updateProduct, deleteProduct };
+  const rejectOrder = async (orderId) => {
+    if (!authUser) return;
+    try {
+      await updateDoc(doc(db, 'orders', orderId), {
+        status: 'rejected'
+      });
+    } catch (error) {
+      console.error("Error rejecting order: ", error);
+      throw error;
+    }
+  };
+
+  const acceptOrder = async (order) => {
+    if (!authUser) return;
+    try {
+        await runTransaction(db, async (transaction) => {
+            const orderRef = doc(db, 'orders', order.id);
+            const userRef = doc(db, 'users', order.userId);
+
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw new Error("User document not found!");
+            }
+
+            const currentPoints = userDoc.data().points || 0;
+            if (currentPoints < order.productPrice) {
+                // We will update the status to rejected if not enough points
+                transaction.update(orderRef, { status: 'rejected', rejectionReason: 'Not enough points' });
+                return;
+            }
+            
+            const newPoints = currentPoints - order.productPrice;
+
+            // Update user's points
+            transaction.update(userRef, { points: newPoints });
+
+            // Update order status
+            transaction.update(orderRef, { status: 'completed' });
+        });
+    } catch (error) {
+        console.error("Error accepting order: ", error);
+        // If the transaction fails, we might want to update the order to reflect the error
+        await updateDoc(doc(db, 'orders', order.id), { status: 'failed', failureReason: error.message });
+        throw error;
+    }
+  };
+
+
+  const value = { subjects, products, orders, exams, loading, addSubject, deleteSubject, addProduct, deleteExam, deleteOrder, updateProduct, deleteProduct, acceptOrder, rejectOrder };
 
   return (
     <DataContext.Provider value={value}>

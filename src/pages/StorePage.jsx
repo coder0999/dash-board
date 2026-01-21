@@ -5,7 +5,7 @@ import EditIcon from '../components/icons/EditIcon';
 import TrashIcon from '../components/icons/TrashIcon';
 
 const StorePage = () => {
-  const { products, orders, deleteOrder, addProduct, updateProduct, deleteProduct } = useData();
+  const { products, orders, addProduct, updateProduct, deleteProduct, acceptOrder, rejectOrder } = useData();
   const { authUser } = useAuth(); // Get the authenticated user
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [productName, setProductName] = useState('');
@@ -15,6 +15,17 @@ const StorePage = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [newQuantity, setNewQuantity] = useState('');
   const [newPrice, setNewPrice] = useState('');
+
+  const getStatusComponent = (status) => {
+    switch (status) {
+      case 'completed':
+        return <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200">مكتمل</span>;
+      case 'rejected':
+        return <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-red-600 bg-red-200">مرفوض</span>;
+      default:
+        return <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-yellow-600 bg-yellow-200">قيد الانتظar</span>;
+    }
+  };
 
   const handleAddProduct = async () => {
     if (!productName || !productPrice || !productQuantity) {
@@ -74,17 +85,6 @@ const StorePage = () => {
     }
   };
 
-  const handleDeleteOrder = async (orderId) => {
-    if (window.confirm('هل أنت متأكد أنك تريد حذف هذا الطلب؟')) {
-      try {
-        await deleteOrder(orderId);
-      } catch (error) {
-        console.error("Error deleting document: ", error);
-        alert('Failed to delete order.');
-      }
-    }
-  };
-
   if (!authUser) {
     return <div className="p-4 text-center">Please log in to see the store.</div>;
   }
@@ -123,11 +123,9 @@ const StorePage = () => {
         {orders.length > 0 ? (
           orders.map(order => (
             <div key={order.id} className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-2">
                 <h3 className="text-lg font-bold text-blue-600">{order.productName}</h3>
-                <button onClick={() => handleDeleteOrder(order.id)} className="p-2 ml-2">
-                  <TrashIcon className="w-6 h-6" />
-                </button>
+                {getStatusComponent(order.status)}
               </div>
               <p className="text-gray-700">السعر: {order.productPrice} نقاط</p>
               <hr className="my-2" />
@@ -138,6 +136,17 @@ const StorePage = () => {
               <p className="text-gray-700"><strong>معلومات التواصل:</strong></p>
               <p className="text-sm text-gray-600">الطريقة: {order.contactMethod}</p>
               <p className="text-sm text-gray-600">الرقم: {order.phoneNumber}</p>
+              
+              {(!order.status || order.status === 'pending') && (
+                <div className="mt-4 flex justify-end space-x-2">
+                  <button onClick={() => rejectOrder(order.id)} className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                    رفض
+                  </button>
+                  <button onClick={() => acceptOrder(order)} className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                    تم
+                  </button>
+                </div>
+              )}
             </div>
           ))
         ) : (

@@ -11,8 +11,10 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "events": "^3.3.0",
     "firebase": "^12.2.1",
     "framer-motion": "^12.23.12",
+    "parse": "^8.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.8.2",

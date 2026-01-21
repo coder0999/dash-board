@@ -5,4 +5,12 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: '/dash-board/',
   plugins: [react()],
+  define: {
+    'global': {},
+  },
+  resolve: {
+    alias: {
+      'events': 'events',
+    },
+  },
 })
